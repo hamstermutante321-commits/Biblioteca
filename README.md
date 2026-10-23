@@ -16,7 +16,7 @@ Aplicación de escritorio para administrar usuarios, libros y préstamos de una 
 
 ---
 
-## 📖 Descripción
+## Descripción
 
 Este proyecto consiste en una aplicación desarrollada en Java para organizar la información de una biblioteca.
 
@@ -26,7 +26,7 @@ También permite consultar la fecha de vencimiento de cada préstamo y conocer q
 
 ---
 
-## ✨ Funcionalidades
+## Funcionalidades
 
 | Módulo | Descripción |
 |---|---|
@@ -39,7 +39,7 @@ También permite consultar la fecha de vencimiento de cada préstamo y conocer q
 
 ---
 
-## 🧩 Entidades del sistema
+## Entidades del sistema
 
 ```text
 Usuario
