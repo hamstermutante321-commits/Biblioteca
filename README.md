@@ -1,49 +1,45 @@
 <div align="center">
 
-# 🩸 BIBLIOTECA NOCTURNA 🩸
+# 📚 Sistema de Biblioteca
 
-### Sistema de control de usuarios, libros y préstamos
+### Gestión de usuarios, libros y préstamos
 
-<img src="https://img.shields.io/badge/Java-17-8B0000?style=for-the-badge&logo=openjdk&logoColor=white">
-<img src="https://img.shields.io/badge/Swing-Interfaz-000000?style=for-the-badge">
-<img src="https://img.shields.io/badge/Estado-En%20desarrollo-4B0000?style=for-the-badge">
+<img src="https://img.shields.io/badge/Java-17-1565C0?style=for-the-badge&logo=openjdk&logoColor=white">
+<img src="https://img.shields.io/badge/Swing-Interfaz%20gráfica-00897B?style=for-the-badge">
+<img src="https://img.shields.io/badge/Estado-En%20desarrollo-F9A825?style=for-the-badge">
 
 <br><br>
 
-> “Todo conocimiento tiene un precio.  
-> Cada libro prestado deja una deuda.”
+Aplicación de escritorio para administrar usuarios, libros y préstamos de una biblioteca.
 
 </div>
 
 ---
 
-## ☠️ Sobre el proyecto
+## 📖 Descripción
 
-**Biblioteca Nocturna** es una aplicación de escritorio desarrollada en Java para administrar usuarios, libros y préstamos.
+Este proyecto consiste en una aplicación desarrollada en Java para organizar la información de una biblioteca.
 
-El sistema permite conocer:
+El sistema permite registrar usuarios, controlar los libros disponibles y administrar los préstamos realizados.
 
-- Qué usuarios tienen libros prestados.
-- Qué libros están disponibles.
-- Qué préstamos están próximos a vencer.
-- Qué usuarios tienen préstamos atrasados.
-- Cuántos ejemplares quedan disponibles.
+También permite consultar la fecha de vencimiento de cada préstamo y conocer qué libros se encuentran disponibles.
 
 ---
 
-## 🕯️ Módulos principales
+## ✨ Funcionalidades
 
-| Módulo | Función |
+| Módulo | Descripción |
 |---|---|
-| 👤 Usuarios | Registrar y administrar usuarios |
-| 📚 Libros | Controlar títulos y ejemplares |
-| 🩸 Préstamos | Registrar libros prestados |
-| ⏳ Vencimientos | Detectar préstamos atrasados |
-| 🗃️ Persistencia | Guardar información en archivos |
+| 👤 Usuarios | Registrar, buscar, editar y eliminar usuarios |
+| 📚 Libros | Administrar títulos, autores y ejemplares |
+| 🔄 Préstamos | Registrar libros prestados a cada usuario |
+| 📅 Vencimientos | Consultar fechas límite de devolución |
+| 📦 Disponibilidad | Controlar los ejemplares disponibles |
+| 🔎 Búsqueda | Buscar usuarios, libros y préstamos |
 
 ---
 
-## 🧬 Modelo del sistema
+## 🧩 Entidades del sistema
 
 ```text
 Usuario
