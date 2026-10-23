@@ -6,7 +6,7 @@
 
 <img src="https://img.shields.io/badge/Java-17-1565C0?style=for-the-badge&logo=openjdk&logoColor=white">
 <img src="https://img.shields.io/badge/Swing-Interfaz%20gráfica-00897B?style=for-the-badge">
-<img src="https://img.shields.io/badge/Estado-En%20desarrollo-F9A825?style=for-the-badge">
+<img src="[https://img.shields.io/badge/Estado-En%20desarrollo-F9A825?style=for-the-badge](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTmpjUlIZZVueWtEAlrZOAdo3_tcRVKRVgyzBrpY5ibz6He9inMj1aYPOI&s=10)">
 
 <br><br>
 
