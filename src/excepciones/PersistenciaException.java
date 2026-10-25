@@ -1,13 +1,13 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-package excepciones;
 
-/**
- *
- * @author USER
- */
-public class PersistenciaException {
-    
+package excepciones;
+// LO QUE SE BUSCARÁ en persistenciaexception:
+//los problemas que podrian haber al leer o escribir los TXT
+
+public class PersistenciaException extends Exception {
+    public PersistenciaException(String mensaje) {
+        super(mensaje);
+    }
+    public PersistenciaException(String mensaje, Throwable causa) {
+        super(mensaje, causa);
+    }
 }
