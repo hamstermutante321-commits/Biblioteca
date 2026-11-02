@@ -14,6 +14,9 @@ import java.io.FileWriter;
 
 public class ArchivosDatos {
     
+    
+    
+    
     private final String RUTA_USUARIOS = "datos/usuarios.txt";
     
     private void asegurarArchivo(String ruta) throws PersistenciaException {
@@ -52,7 +55,21 @@ public class ArchivosDatos {
         }
     }
     public void guardarUsuarios(List<String> lineas)
+            
             throws PersistenciaException {
-        try (BufferedWriter)
+        asegurarArchivo(RUTA_USUARIOS);
+        try (BufferedWriter escritor = new BufferedWriter(
+            new FileWriter(RUTA_USUARIOS, StandardCharsets.UTF_8))) {
+            
+            for (String linea : lineas) {
+                escritor.write(linea);
+                escritor.newLine();
+            }
+           
+        } catch (IOException e) {
+            throw new PersistenciaException( // este método puede fallar con este tipo de error.
+            "No se puede guardar " + RUTA_USUARIOS, e);
+        }
+                
     }
 }
