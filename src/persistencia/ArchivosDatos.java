@@ -45,9 +45,11 @@ public class ArchivosDatos {
     public List<String> leerUsuarios() throws PersistenciaException {
         asegurarArchivo(rutaUsuarios);
         List<String> lineas = new ArrayList<>();
+        BufferedReader lector = null;
 
-        try (BufferedReader lector = new BufferedReader(
-                new FileReader(rutaUsuarios, StandardCharsets.UTF_8))) {
+        try {
+            lector = new BufferedReader(
+                    new FileReader(rutaUsuarios, StandardCharsets.UTF_8));
 
             String linea;
 
@@ -61,6 +63,15 @@ public class ArchivosDatos {
             throw new PersistenciaException(
                     "No se pudo leer " + rutaUsuarios, error
             );
+        } finally {
+            // Se cierra el lector aunque ocurra un error o se ejecute el return.
+            if (lector != null) {
+                try {
+                    lector.close();
+                } catch (IOException error) {
+                    throw new PersistenciaException("No se pudo cerrar el lector", error);
+                }
+            }
         }
     }
     // Reemplaza el contenido del TXT con la lista completa.
