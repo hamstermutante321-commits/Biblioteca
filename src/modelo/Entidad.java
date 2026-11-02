@@ -9,24 +9,20 @@ package modelo;
  * @author USER
  */
 public abstract class Entidad {
-    private String id;
-    public Entidad(String id) {
-        this.setId(id);
+    // Cada objeto conserva el mismo identificador durante toda su vida.
+    private final String id;
+
+    protected Entidad(String id) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("El id es obligatorio.");
+        }
+        this.id = id.strip();
     }
 
     public String getId() {
         return id;
     }
 
-    public void setId(String id) {
-        if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("El id es obligatorio.");
-        }
-        else {
-            this.id = id;
-        }
-    }
-    
     public abstract String getEtiqueta();
     
     @Override
