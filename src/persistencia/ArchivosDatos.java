@@ -13,18 +13,26 @@ import java.io.FileWriter;
 
 
 public class ArchivosDatos {
-    
-    
-    
-    
-    private final String RUTA_USUARIOS = "datos/usuarios.txt";
+
+    private final String rutaUsuarios;
+
+    public ArchivosDatos() {
+        this("datos");
+    }
+
+    // Permite usar otra carpeta en las pruebas.
+    public ArchivosDatos(String carpetaDatos) {
+        rutaUsuarios = carpetaDatos + "/usuarios.txt";
+    }
     
     private void asegurarArchivo(String ruta) throws PersistenciaException {
         File archivo = new File(ruta);
         File carpeta = archivo.getParentFile();
         try {
-            if (carpeta != null && !carpeta.exists()) {
-                carpeta.mkdirs();
+            if (!carpeta.exists()) {
+                if (!carpeta.mkdirs()) {
+                    throw new IOException("No se pudo crear la carpeta " + carpeta);
+                }
             }
             if (!archivo.exists()) {
                 archivo.createNewFile();
@@ -35,10 +43,11 @@ public class ArchivosDatos {
     }
 
     public List<String> leerUsuarios() throws PersistenciaException {
+        asegurarArchivo(rutaUsuarios);
         List<String> lineas = new ArrayList<>();
 
         try (BufferedReader lector = new BufferedReader(
-                new FileReader("datos/usuarios.txt", StandardCharsets.UTF_8))) {
+                new FileReader(rutaUsuarios, StandardCharsets.UTF_8))) {
 
             String linea;
 
@@ -50,16 +59,15 @@ public class ArchivosDatos {
 
         } catch (IOException error) {
             throw new PersistenciaException(
-                    "No se pudo leer datos/usuarios.txt", error
+                    "No se pudo leer " + rutaUsuarios, error
             );
         }
     }
-    public void guardarUsuarios(List<String> lineas)
-            
-            throws PersistenciaException {
-        asegurarArchivo(RUTA_USUARIOS);
+    // Reemplaza el contenido del TXT con la lista completa.
+    public void guardarUsuarios(List<String> lineas) throws PersistenciaException {
+        asegurarArchivo(rutaUsuarios);
         try (BufferedWriter escritor = new BufferedWriter(
-            new FileWriter(RUTA_USUARIOS, StandardCharsets.UTF_8))) {
+                new FileWriter(rutaUsuarios, StandardCharsets.UTF_8))) {
             
             for (String linea : lineas) {
                 escritor.write(linea);
@@ -67,8 +75,8 @@ public class ArchivosDatos {
             }
            
         } catch (IOException e) {
-            throw new PersistenciaException( // este método puede fallar con este tipo de error.
-            "No se puede guardar " + RUTA_USUARIOS, e);
+            throw new PersistenciaException(
+                    "No se puede guardar " + rutaUsuarios, e);
         }
                 
     }
