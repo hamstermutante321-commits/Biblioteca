@@ -16,7 +16,7 @@ public class ArchivosDatos {
     
     private final String RUTA_USUARIOS = "datos/usuarios.txt";
     
-    private void asegurarArchivo(String ruta) throws PersistenciaException {
+    private void asegurarArchivoExistencia(String ruta) throws PersistenciaException {
         File archivo = new File(ruta);
         File carpeta = archivo.getParentFile();
         try {
@@ -32,6 +32,8 @@ public class ArchivosDatos {
     }
 
     public List<String> leerUsuarios() throws PersistenciaException {
+        
+        asegurarArchivoExistencia(RUTA_USUARIOS);
         List<String> lineas = new ArrayList<>();
 
         try (BufferedReader lector = new BufferedReader(
@@ -53,6 +55,17 @@ public class ArchivosDatos {
     }
     public void guardarUsuarios(List<String> lineas)
             throws PersistenciaException {
-        try (BufferedWriter)
+        asegurarArchivoExistencia(RUTA_USUARIOS);
+        try (BufferedWriter escritor = new BufferedWriter(
+                new FileWriter(RUTA_USUARIOS, StandardCharsets.UTF_8))) {
+            for (String linea : lineas) {
+                escritor.write(linea);
+                escritor.newLine();
+            }
+        } catch (IOException e) {
+            throw new PersistenciaException (
+                    "No se pudo guardar en " + RUTA_USUARIOS, e
+            );
+        }
     }
 }
