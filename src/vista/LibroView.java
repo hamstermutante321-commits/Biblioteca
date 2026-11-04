@@ -1,7 +1,7 @@
 package vista;
 
 import modelo.Libro;
-import servicios.LibroServicio;
+import servicios.ServicioLibros;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -14,11 +14,11 @@ public class LibroView extends JFrame {
     private JTextField txtId, txtTitulo, txtAutor, txtTotales, txtDisponibles, txtBuscar;
     private JTable tablaLibros;
     private DefaultTableModel modeloTabla;
-    private LibroServicio servicio;
+    private ServicioLibros servicio;
 
     public LibroView() {
-        servicio = new LibroServicio();
-        setTitle("Gestión de Libros - Biblioteca POO");
+        servicio = new ServicioLibros();
+        setTitle("Gestión de Libros - Biblioteca");
         setSize(750, 550);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -80,6 +80,7 @@ public class LibroView extends JFrame {
         // Configuración de la JTable
         modeloTabla = new DefaultTableModel(new String[]{"ID", "Título", "Autor", "Totales", "Disponibles"}, 0);
         tablaLibros = new JTable(modeloTabla);
+        panelCentro.add(new JScrollPane(tablaLibros), BorderLayout.CENTER);
 
         add(panelCentro, BorderLayout.CENTER);
 
@@ -132,7 +133,7 @@ public class LibroView extends JFrame {
             int totales = Integer.parseInt(txtTotales.getText().trim());
             int disponibles = Integer.parseInt(txtDisponibles.getText().trim());
 
-            Libro libro = new Libro(null, titulo, autor, totales, disponibles);
+            Libro libro = new Libro(servicio.generarId(), titulo, autor, totales, disponibles);
             servicio.guardar(libro);
             cargarTabla(servicio.listar());
             limpiarCampos();

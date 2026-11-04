@@ -56,7 +56,6 @@ public class ServicioLibros {
 
     // Guardar un nuevo libro
     public void guardar(Libro libro) {
-        libro.setId(generarId());
         try (PrintWriter pw = new PrintWriter(new FileWriter(RUTA_ARCHIVO, true))) {
             pw.println(libro.getId() + "|" + libro.getTitulo() + "|" + libro.getAutor() + "|" +
                        libro.getEjemplaresTotales() + "|" + libro.getEjemplaresDisponibles());

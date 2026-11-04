@@ -18,7 +18,7 @@ public abstract class Entidad {
         }
         this.id = id.strip();
     }
-
+    
     public String getId() {
         return id;
     }

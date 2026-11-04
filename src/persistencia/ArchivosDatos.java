@@ -43,7 +43,7 @@ public class ArchivosDatos {
     }
 
     public List<String> leerUsuarios() throws PersistenciaException {
-        asegurarArchivo(rutaUsuarios);
+        asegurarArchivoExistencia(rutaUsuarios);
         List<String> lineas = new ArrayList<>();
         BufferedReader lector = null;
 
@@ -76,7 +76,7 @@ public class ArchivosDatos {
     }
     // Reemplaza el contenido del TXT con la lista completa.
     public void guardarUsuarios(List<String> lineas) throws PersistenciaException {
-        asegurarArchivo(rutaUsuarios);
+        asegurarArchivoExistencia(rutaUsuarios);
         try (BufferedWriter escritor = new BufferedWriter(
                 new FileWriter(rutaUsuarios, StandardCharsets.UTF_8))) {
             for (String linea : lineas) {
