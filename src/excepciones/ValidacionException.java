@@ -1,13 +1,16 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package excepciones;
 
 /**
- *
- * @author USER
+ * Indica que un dato o una operacion no cumple las reglas del sistema.
+ * Por ejemplo: nombre vacio, documento repetido o libro sin ejemplares.
  */
-public class ValidacionException {
-    
+public class ValidacionException extends Exception {
+
+    public ValidacionException(String mensaje) {
+        super(mensaje);
+    }
+
+    public ValidacionException(String mensaje, Throwable causa) {
+        super(mensaje, causa);
+    }
 }
