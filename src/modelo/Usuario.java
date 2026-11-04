@@ -8,6 +8,63 @@ package modelo;
  *
  * @author USER
  */
-public class Usuario {
-    
+public class Usuario extends Entidad {
+
+    private String nombre;
+    private String dni;
+    private String correo;
+
+    public Usuario(String id, String nombre, String dni, String correo) {
+        super(id);
+        setCorreo(correo);
+        setDni(dni);
+        setNombre(nombre);
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre es obligatorio");
+        }
+        this.nombre = nombre.strip();
+    }
+
+    public String getDni() {
+        return dni;
+    }
+
+    public void setDni(String dni) {
+        if (dni == null || dni.isBlank()) {
+            throw new IllegalArgumentException("El DNI es obligatorio");
+        }
+        this.dni = dni.strip();
+    }
+
+    public String getCorreo() {
+        return correo;
+    }
+
+    public void setCorreo(String correo) {
+        if (correo == null || correo.isBlank()) {
+            throw new IllegalArgumentException("El correo es obligatorio");
+        }
+
+        String correoLimpio = correo.strip();
+
+        if (!correoLimpio.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            throw new IllegalArgumentException("El correo debe tener un formato válido.");
+        }
+
+        this.correo = correoLimpio;
+    }
+
+    @Override
+    public String getEtiqueta() {
+        return this.nombre;
+    }
+
+
 }
