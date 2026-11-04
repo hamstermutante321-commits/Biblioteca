@@ -5,7 +5,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LibroServicio {
+public class ServicioLibros {
     private final String RUTA_ARCHIVO = "libros.txt";
 
     // Generar el siguiente ID automáticamente (Ej. L00001)
