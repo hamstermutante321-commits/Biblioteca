@@ -8,9 +8,12 @@ import java.awt.GridLayout;
 import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Locale;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -26,8 +29,11 @@ import servicios.ServicioPrestamos;
 public class PrestamoView extends JFrame {
     private final ServicioPrestamos servicio = new ServicioPrestamos();
     private final JTextField campoUsuario = new JTextField();
+    private final JTextField campoBusqueda = new JTextField(15);
+    private final JComboBox<String> filtroEstado = new JComboBox<>(
+            new String[]{"Todos", "Activos", "Vencidos", "Devueltos"});
     private final DefaultTableModel modeloTabla = new DefaultTableModel(
-            new String[]{"ID", "Usuario", "Préstamo", "Vencimiento", "Devolución"}, 0) {
+            new String[]{"ID", "Usuario", "Préstamo", "Vencimiento", "Devolución", "Estado"}, 0) {
         @Override
         public boolean isCellEditable(int fila, int columna) {
             return false;
@@ -78,8 +84,27 @@ public class PrestamoView extends JFrame {
         panelFormulario.add(registrar, BorderLayout.SOUTH);
         contenido.add(panelFormulario, BorderLayout.WEST);
 
+        JPanel panelListado = new JPanel(new BorderLayout(0, 10));
+        panelListado.setOpaque(false);
+        JPanel panelBusqueda = new JPanel();
+        panelBusqueda.setOpaque(false);
+        panelBusqueda.add(new JLabel("Buscar por ID:"));
+        panelBusqueda.add(campoBusqueda);
+        panelBusqueda.add(filtroEstado);
+        JButton buscar = new JButton("Buscar");
+        buscar.addActionListener(e -> cargarTabla());
+        panelBusqueda.add(buscar);
+        JButton verTodos = new JButton("Ver todos");
+        verTodos.addActionListener(e -> {
+            campoBusqueda.setText("");
+            filtroEstado.setSelectedItem("Todos");
+            cargarTabla();
+        });
+        panelBusqueda.add(verTodos);
+        panelListado.add(panelBusqueda, BorderLayout.NORTH);
         tabla.setRowHeight(28);
-        contenido.add(new JScrollPane(tabla), BorderLayout.CENTER);
+        panelListado.add(new JScrollPane(tabla), BorderLayout.CENTER);
+        contenido.add(panelListado, BorderLayout.CENTER);
         cargarTabla();
     }
 
@@ -97,16 +122,38 @@ public class PrestamoView extends JFrame {
 
     private void cargarTabla() {
         try {
+            List<Prestamo> prestamos = servicio.listar();
+            String busqueda = campoBusqueda.getText().trim().toLowerCase(Locale.ROOT);
+            String estadoElegido = (String) filtroEstado.getSelectedItem();
             modeloTabla.setRowCount(0);
-            for (Prestamo prestamo : servicio.listar()) {
+            for (Prestamo prestamo : prestamos) {
+                String estado = obtenerEstado(prestamo);
+                String idPrestamo = prestamo.getId().toLowerCase(Locale.ROOT);
+                String idUsuario = prestamo.getIdUsuario().toLowerCase(Locale.ROOT);
+                if (!idPrestamo.contains(busqueda) && !idUsuario.contains(busqueda)) {
+                    continue;
+                }
+                if (!estadoElegido.equals("Todos") && !estadoElegido.equals(estado + "s")) {
+                    continue;
+                }
                 modeloTabla.addRow(new Object[]{
                     prestamo.getId(), prestamo.getIdUsuario(), prestamo.getFechaPrestamo(),
-                    prestamo.getFechaVencimiento(), prestamo.getFechaDevolucion()
+                    prestamo.getFechaVencimiento(), prestamo.getFechaDevolucion(), estado
                 });
             }
         } catch (IOException error) {
             JOptionPane.showMessageDialog(this, error.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private String obtenerEstado(Prestamo prestamo) {
+        if (!prestamo.estaActivo()) {
+            return "Devuelto";
+        }
+        if (prestamo.estaVencido(LocalDate.now())) {
+            return "Vencido";
+        }
+        return "Activo";
     }
 
     public static void main(String[] args) {
