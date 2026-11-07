@@ -29,6 +29,7 @@ import modelo.Prestamo;
 import servicios.ServicioPrestamos;
 
 public class PrestamoView extends JFrame {
+    private static final Color TERRACOTA = new Color(183, 76, 64);
     private final ServicioPrestamos servicio = new ServicioPrestamos();
     private final JTextField campoUsuario = new JTextField();
     private final JTextField campoBusqueda = new JTextField(15);
@@ -46,6 +47,7 @@ public class PrestamoView extends JFrame {
     public PrestamoView() {
         setTitle("Biblioteca - Préstamos");
         setSize(900, 600);
+        setMinimumSize(new java.awt.Dimension(800, 500));
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -76,14 +78,17 @@ public class PrestamoView extends JFrame {
         formulario.add(new JLabel("El plazo de devolución es de 14 días."));
 
         JButton registrar = new JButton("Registrar préstamo");
-        registrar.setBackground(new Color(183, 76, 64));
-        registrar.setForeground(Color.WHITE);
+        aplicarEstiloBoton(registrar);
         registrar.addActionListener(e -> registrarPrestamo());
 
         JPanel panelFormulario = new JPanel(new BorderLayout(0, 10));
         panelFormulario.setOpaque(false);
-        panelFormulario.add(formulario, BorderLayout.CENTER);
-        panelFormulario.add(registrar, BorderLayout.SOUTH);
+        JPanel tarjetaFormulario = new JPanel(new BorderLayout(0, 10));
+        tarjetaFormulario.setBackground(Color.WHITE);
+        tarjetaFormulario.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        tarjetaFormulario.add(formulario, BorderLayout.CENTER);
+        tarjetaFormulario.add(registrar, BorderLayout.SOUTH);
+        panelFormulario.add(tarjetaFormulario, BorderLayout.NORTH);
         contenido.add(panelFormulario, BorderLayout.WEST);
 
         JPanel panelListado = new JPanel(new BorderLayout(0, 10));
@@ -94,9 +99,11 @@ public class PrestamoView extends JFrame {
         panelBusqueda.add(campoBusqueda);
         panelBusqueda.add(filtroEstado);
         JButton buscar = new JButton("Buscar");
+        aplicarEstiloBoton(buscar);
         buscar.addActionListener(e -> cargarTabla());
         panelBusqueda.add(buscar);
         JButton verTodos = new JButton("Ver todos");
+        aplicarEstiloBoton(verTodos);
         verTodos.addActionListener(e -> {
             campoBusqueda.setText("");
             filtroEstado.setSelectedItem("Todos");
@@ -105,9 +112,14 @@ public class PrestamoView extends JFrame {
         panelBusqueda.add(verTodos);
         panelListado.add(panelBusqueda, BorderLayout.NORTH);
         tabla.setRowHeight(28);
+        tabla.setSelectionBackground(new Color(246, 226, 219));
+        tabla.setSelectionForeground(Color.BLACK);
+        tabla.getTableHeader().setBackground(new Color(246, 232, 224));
+        tabla.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 12));
         tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         panelListado.add(new JScrollPane(tabla), BorderLayout.CENTER);
         JButton devolver = new JButton("Registrar devolución");
+        aplicarEstiloBoton(devolver);
         devolver.addActionListener(e -> registrarDevolucion());
         JPanel panelAcciones = new JPanel();
         panelAcciones.setOpaque(false);
@@ -115,6 +127,14 @@ public class PrestamoView extends JFrame {
         panelListado.add(panelAcciones, BorderLayout.SOUTH);
         contenido.add(panelListado, BorderLayout.CENTER);
         cargarTabla();
+    }
+
+    private void aplicarEstiloBoton(JButton boton) {
+        boton.setBackground(TERRACOTA);
+        boton.setForeground(Color.WHITE);
+        boton.setFocusPainted(false);
+        boton.setFont(new Font("SansSerif", Font.BOLD, 12));
+        boton.setBorder(BorderFactory.createEmptyBorder(9, 14, 9, 14));
     }
 
     private void registrarPrestamo() {
