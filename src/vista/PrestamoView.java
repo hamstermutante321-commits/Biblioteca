@@ -8,6 +8,7 @@ import java.awt.GridLayout;
 import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 import javax.swing.BorderFactory;
@@ -21,6 +22,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 import modelo.Prestamo;
@@ -103,7 +105,14 @@ public class PrestamoView extends JFrame {
         panelBusqueda.add(verTodos);
         panelListado.add(panelBusqueda, BorderLayout.NORTH);
         tabla.setRowHeight(28);
+        tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         panelListado.add(new JScrollPane(tabla), BorderLayout.CENTER);
+        JButton devolver = new JButton("Registrar devolución");
+        devolver.addActionListener(e -> registrarDevolucion());
+        JPanel panelAcciones = new JPanel();
+        panelAcciones.setOpaque(false);
+        panelAcciones.add(devolver);
+        panelListado.add(panelAcciones, BorderLayout.SOUTH);
         contenido.add(panelListado, BorderLayout.CENTER);
         cargarTabla();
     }
@@ -154,6 +163,33 @@ public class PrestamoView extends JFrame {
             return "Vencido";
         }
         return "Activo";
+    }
+
+    private void registrarDevolucion() {
+        int fila = tabla.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this, "Selecciona un préstamo de la tabla.");
+            return;
+        }
+
+        String id = modeloTabla.getValueAt(tabla.convertRowIndexToModel(fila), 0).toString();
+        String textoFecha = JOptionPane.showInputDialog(this,
+                "Fecha de devolución (AAAA-MM-DD):", LocalDate.now().toString());
+        if (textoFecha == null) {
+            return;
+        }
+
+        try {
+            LocalDate fecha = LocalDate.parse(textoFecha.trim());
+            servicio.registrarDevolucion(id, fecha);
+            cargarTabla();
+            JOptionPane.showMessageDialog(this, "Devolución del préstamo " + id + " registrada.");
+        } catch (DateTimeParseException error) {
+            JOptionPane.showMessageDialog(this, "Escribe una fecha válida con el formato AAAA-MM-DD.",
+                    "Fecha inválida", JOptionPane.ERROR_MESSAGE);
+        } catch (IllegalArgumentException | IllegalStateException | IOException error) {
+            JOptionPane.showMessageDialog(this, error.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public static void main(String[] args) {
