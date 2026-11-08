@@ -27,6 +27,7 @@ public class Libro extends Entidad {
         if (titulo == null || titulo.isBlank()) {
             throw new IllegalArgumentException("El título es obligatorio.");
         }
+        validarSeparadores(titulo);
         this.titulo = titulo.strip();
     }
 
@@ -38,6 +39,7 @@ public class Libro extends Entidad {
         if (autor == null || autor.isBlank()) {
             throw new IllegalArgumentException("El autor es obligatorio.");
         }
+        validarSeparadores(autor);
         this.autor = autor.strip();
     }
 
@@ -49,10 +51,12 @@ public class Libro extends Entidad {
         if (ejemplaresTotales < 0) {
             throw new IllegalArgumentException("El total de ejemplares no puede ser negativo.");
         }
-        if (ejemplaresTotales < this.ejemplaresDisponibles) {
-            throw new IllegalArgumentException("El total no puede ser menor que los ejemplares disponibles.");
+        int prestados = this.ejemplaresTotales - this.ejemplaresDisponibles;
+        if (ejemplaresTotales < prestados) {
+            throw new IllegalArgumentException("El total no puede ser menor que los ejemplares prestados.");
         }
         this.ejemplaresTotales = ejemplaresTotales;
+        this.ejemplaresDisponibles = ejemplaresTotales - prestados;
     }
 
     public int getEjemplaresDisponibles() {
@@ -89,6 +93,12 @@ public class Libro extends Entidad {
     @Override
     public String getEtiqueta() {
         return titulo;
+    }
+
+    private void validarSeparadores(String texto) {
+        if (texto.indexOf('|') >= 0 || texto.indexOf('\n') >= 0 || texto.indexOf('\r') >= 0) {
+            throw new IllegalArgumentException("El texto no puede contener | ni saltos de línea.");
+        }
     }
 
 }

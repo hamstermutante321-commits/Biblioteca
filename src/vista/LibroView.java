@@ -1,188 +1,206 @@
 package vista;
 
+import excepciones.PersistenciaException;
+import excepciones.ValidacionException;
 import modelo.Libro;
 import servicios.ServicioLibros;
-
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.List;
 
+/** Pantalla independiente, preparada para compartir el servicio en la integración. */
 public class LibroView extends JFrame {
-    private JTextField txtId, txtTitulo, txtAutor, txtTotales, txtDisponibles, txtBuscar;
-    private JTable tablaLibros;
-    private DefaultTableModel modeloTabla;
-    private ServicioLibros servicio;
+    private final ServicioLibros servicio;
+    private final JTextField txtId = new JTextField();
+    private final JTextField txtTitulo = new JTextField();
+    private final JTextField txtAutor = new JTextField();
+    private final JTextField txtTotales = new JTextField();
+    private final JTextField txtDisponibles = new JTextField();
+    private final JTextField txtBuscar = new JTextField(20);
+    private final JComboBox<String> tipoBusqueda = new JComboBox<>(new String[]{"Título", "ID"});
+    private final DefaultTableModel modeloTabla = new DefaultTableModel(
+            new String[]{"ID", "Título", "Autor", "Totales", "Disponibles"}, 0) {
+        @Override public boolean isCellEditable(int fila, int columna) { return false; }
+        @Override public Class<?> getColumnClass(int columna) { return columna >= 3 ? Integer.class : String.class; }
+    };
+    private final JTable tabla = new JTable(modeloTabla);
+    private final JLabel estado = new JLabel(" ");
+    private String idSeleccionado;
+    private boolean actualizandoTabla;
 
-    public LibroView() {
-        servicio = new ServicioLibros();
-        setTitle("Gestión de Libros - Biblioteca");
-        setSize(750, 550);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    public LibroView() { this(new ServicioLibros()); }
+
+    public LibroView(ServicioLibros servicio) {
+        this.servicio = servicio;
+        setTitle("Biblioteca · Catálogo de libros");
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setMinimumSize(new Dimension(760, 540));
+        setSize(900, 600);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(10, 10));
 
-        // Panel Superior: Formulario de Registro/Edición
-        JPanel panelFormulario = new JPanel(new GridLayout(6, 2, 5, 5));
-        panelFormulario.setBorder(BorderFactory.createTitledBorder("Datos del Libro"));
-
-        panelFormulario.add(new JLabel("ID (Automático):"));
-        txtId = new JTextField();
+        JPanel contenido = new JPanel(new BorderLayout(12, 12));
+        contenido.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        setContentPane(contenido);
+        JLabel encabezado = new JLabel("Catálogo de libros");
+        encabezado.setFont(encabezado.getFont().deriveFont(Font.BOLD, 24f));
+        JPanel formulario = new JPanel(new GridLayout(5, 2, 10, 8));
         txtId.setEditable(false);
-        panelFormulario.add(txtId);
+        txtDisponibles.setEditable(false);
+        agregarCampo(formulario, "ID automático", txtId);
+        agregarCampo(formulario, "Título", txtTitulo);
+        agregarCampo(formulario, "Autor", txtAutor);
+        agregarCampo(formulario, "Ejemplares totales", txtTotales);
+        agregarCampo(formulario, "Disponibles (según préstamos)", txtDisponibles);
+        JPanel superior = new JPanel(new BorderLayout(10, 12));
+        superior.add(encabezado, BorderLayout.NORTH);
+        superior.add(formulario, BorderLayout.CENTER);
+        JPanel botones = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        boton(botones, "Registrar", this::registrar);
+        boton(botones, "Modificar", this::modificar);
+        boton(botones, "Eliminar", this::eliminar);
+        boton(botones, "Nuevo / Limpiar", this::limpiar);
+        superior.add(botones, BorderLayout.SOUTH);
+        contenido.add(superior, BorderLayout.NORTH);
 
-        panelFormulario.add(new JLabel("Título:"));
-        txtTitulo = new JTextField();
-        panelFormulario.add(txtTitulo);
-
-        panelFormulario.add(new JLabel("Autor:"));
-        txtAutor = new JTextField();
-        panelFormulario.add(txtAutor);
-
-        panelFormulario.add(new JLabel("Ejemplares Totales:"));
-        txtTotales = new JTextField();
-        panelFormulario.add(txtTotales);
-
-        panelFormulario.add(new JLabel("Ejemplares Disponibles:"));
-        txtDisponibles = new JTextField();
-        panelFormulario.add(txtDisponibles);
-
-        // Botones de acción
-        JPanel panelBotones = new JPanel(new FlowLayout());
-        JButton btnGuardar = new JButton("Guardar");
-        JButton btnModificar = new JButton("Modificar");
-        JButton btnLimpiar = new JButton("Limpiar");
-        panelBotones.add(btnGuardar);
-        panelBotones.add(btnModificar);
-        panelBotones.add(btnLimpiar);
-        
-        JPanel panelNorte = new JPanel(new BorderLayout());
-        panelNorte.add(panelFormulario, BorderLayout.CENTER);
-        panelNorte.add(panelBotones, BorderLayout.SOUTH);
-        add(panelNorte, BorderLayout.NORTH);
-
-        // Panel Central: Búsqueda y Tabla
-        JPanel panelCentro = new JPanel(new BorderLayout(5, 5));
-        
-        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        panelBusqueda.add(new JLabel("Buscar por Título:"));
-        txtBuscar = new JTextField(20);
-        JButton btnBuscar = new JButton("Buscar");
-        JButton btnMostrarTodos = new JButton("Ver Todos");
-        panelBusqueda.add(txtBuscar);
-        panelBusqueda.add(btnBuscar);
-        panelBusqueda.add(btnMostrarTodos);
-        
-        panelCentro.add(panelBusqueda, BorderLayout.NORTH);
-
-        // Configuración de la JTable
-        modeloTabla = new DefaultTableModel(new String[]{"ID", "Título", "Autor", "Totales", "Disponibles"}, 0);
-        tablaLibros = new JTable(modeloTabla);
-        panelCentro.add(new JScrollPane(tablaLibros), BorderLayout.CENTER);
-
-        add(panelCentro, BorderLayout.CENTER);
-
-        // Eventos
-        cargarTabla(servicio.listar());
-        txtId.setText(servicio.generarId());
-
-        btnGuardar.addActionListener(e -> guardarLibro());
-        btnModificar.addActionListener(e -> modificarLibro());
-        btnLimpiar.addActionListener(e -> limpiarCampos());
-        btnBuscar.addActionListener(e -> buscarLibros());
-        btnMostrarTodos.addActionListener(e -> {
-            cargarTabla(servicio.listar());
-            txtId.setText(servicio.generarId());
+        JPanel busqueda = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        busqueda.add(new JLabel("Buscar por"));
+        busqueda.add(tipoBusqueda);
+        busqueda.add(txtBuscar);
+        boton(busqueda, "Buscar", this::buscar);
+        boton(busqueda, "Ver todos", () -> ejecutar(() -> mostrar(servicio.listar())));
+        txtBuscar.addActionListener(e -> buscar());
+        JPanel centro = new JPanel(new BorderLayout(8, 8));
+        centro.add(busqueda, BorderLayout.NORTH);
+        tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tabla.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) seleccionar();
         });
+        centro.add(new JScrollPane(tabla), BorderLayout.CENTER);
+        contenido.add(centro, BorderLayout.CENTER);
+        contenido.add(estado, BorderLayout.SOUTH);
+        limpiar();
+        ejecutar(() -> mostrar(servicio.listar()));
+    }
 
-        // Evento al hacer clic en la tabla para pasar datos a los campos
-        tablaLibros.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                int fila = tablaLibros.getSelectedRow();
-                if (fila != -1) {
-                    txtId.setText(modeloTabla.getValueAt(fila, 0).toString());
-                    txtTitulo.setText(modeloTabla.getValueAt(fila, 1).toString());
-                    txtAutor.setText(modeloTabla.getValueAt(fila, 2).toString());
-                    txtTotales.setText(modeloTabla.getValueAt(fila, 3).toString());
-                    txtDisponibles.setText(modeloTabla.getValueAt(fila, 4).toString());
-                }
-            }
+    private void agregarCampo(JPanel panel, String etiqueta, JTextField campo) {
+        JLabel label = new JLabel(etiqueta);
+        label.setLabelFor(campo);
+        panel.add(label);
+        panel.add(campo);
+    }
+
+    private void boton(JPanel panel, String texto, Runnable accion) {
+        JButton boton = new JButton(texto);
+        boton.addActionListener(e -> accion.run());
+        panel.add(boton);
+    }
+
+    private int leerTotal() {
+        String texto = txtTotales.getText().strip();
+        if (!texto.matches("[0-9]+")) throw new NumberFormatException();
+        return Integer.parseInt(texto);
+    }
+
+    private void registrar() {
+        if (idSeleccionado != null) {
+            JOptionPane.showMessageDialog(this, "Pulsa Nuevo / Limpiar antes de registrar otro libro.");
+            return;
+        }
+        ejecutar(() -> {
+            Libro nuevo = servicio.registrar(txtTitulo.getText(), txtAutor.getText(), leerTotal());
+            mostrar(servicio.listar());
+            limpiar();
+            estado.setText("Libro registrado: " + nuevo.getId());
         });
     }
 
-    private void cargarTabla(List<Libro> lista) {
-        modeloTabla.setRowCount(0);
-        for (Libro l : lista) {
-            modeloTabla.addRow(new Object[]{
-                l.getId(), l.getTitulo(), l.getAutor(), l.getEjemplaresTotales(), l.getEjemplaresDisponibles()
-            });
-        }
+    private void modificar() {
+        ejecutar(() -> {
+            exigirSeleccion();
+            servicio.modificar(idSeleccionado, txtTitulo.getText(), txtAutor.getText(), leerTotal());
+            mostrar(servicio.listar());
+            limpiar();
+            estado.setText("Libro modificado correctamente.");
+        });
     }
 
-    private void guardarLibro() {
+    private void eliminar() {
+        ejecutar(() -> {
+            exigirSeleccion();
+            if (JOptionPane.showConfirmDialog(this, "¿Eliminar el libro " + idSeleccionado + "?",
+                    "Confirmar eliminación", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) return;
+            servicio.eliminar(idSeleccionado);
+            mostrar(servicio.listar());
+            limpiar();
+            estado.setText("Libro eliminado correctamente.");
+        });
+    }
+
+    private void buscar() {
+        ejecutar(() -> {
+            if (tipoBusqueda.getSelectedIndex() == 1) {
+                mostrar(java.util.Collections.singletonList(servicio.buscarPorId(txtBuscar.getText())));
+            } else mostrar(servicio.buscar(txtBuscar.getText()));
+        });
+    }
+
+    private void mostrar(List<Libro> libros) {
+        actualizandoTabla = true;
         try {
-            String titulo = txtTitulo.getText().trim();
-            String autor = txtAutor.getText().trim();
-            if (titulo.isEmpty() || autor.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Por favor complete el título y el autor.", "Advertencia", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            int totales = Integer.parseInt(txtTotales.getText().trim());
-            int disponibles = Integer.parseInt(txtDisponibles.getText().trim());
-
-            Libro libro = new Libro(servicio.generarId(), titulo, autor, totales, disponibles);
-            servicio.guardar(libro);
-            cargarTabla(servicio.listar());
-            limpiarCampos();
-            JOptionPane.showMessageDialog(this, "Libro guardado con éxito.");
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Los campos de ejemplares deben ser numéricos.", "Error", JOptionPane.ERROR_MESSAGE);
-        } catch (IllegalArgumentException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error de validación", JOptionPane.ERROR_MESSAGE);
+            limpiar();
+            modeloTabla.setRowCount(0);
+            for (Libro libro : libros) modeloTabla.addRow(new Object[]{libro.getId(), libro.getTitulo(),
+                libro.getAutor(), libro.getEjemplaresTotales(), libro.getEjemplaresDisponibles()});
+            estado.setText(libros.size() + " libro(s) en la lista.");
+        } finally {
+            actualizandoTabla = false;
         }
     }
 
-    private void modificarLibro() {
-        try {
-            String id = txtId.getText().trim();
-            if (id.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Seleccione un libro de la tabla para modificar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            String titulo = txtTitulo.getText().trim();
-            String autor = txtAutor.getText().trim();
-            int totales = Integer.parseInt(txtTotales.getText().trim());
-            int disponibles = Integer.parseInt(txtDisponibles.getText().trim());
-
-            Libro libro = new Libro(id, titulo, autor, totales, disponibles);
-            servicio.modificar(libro);
-            cargarTabla(servicio.listar());
-            limpiarCampos();
-            JOptionPane.showMessageDialog(this, "Libro modificado con éxito.");
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Los campos de ejemplares deben ser numéricos.", "Error", JOptionPane.ERROR_MESSAGE);
-        } catch (IllegalArgumentException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error de validación", JOptionPane.ERROR_MESSAGE);
-        }
+    private void seleccionar() {
+        if (actualizandoTabla) return;
+        int fila = tabla.getSelectedRow();
+        if (fila < 0) return;
+        int indice = tabla.convertRowIndexToModel(fila);
+        idSeleccionado = modeloTabla.getValueAt(indice, 0).toString();
+        txtId.setText(idSeleccionado);
+        txtTitulo.setText(modeloTabla.getValueAt(indice, 1).toString());
+        txtAutor.setText(modeloTabla.getValueAt(indice, 2).toString());
+        txtTotales.setText(modeloTabla.getValueAt(indice, 3).toString());
+        txtDisponibles.setText(modeloTabla.getValueAt(indice, 4).toString());
     }
 
-    private void buscarLibros() {
-        String filtro = txtBuscar.getText().trim();
-        List<Libro> resultados = servicio.buscar(filtro);
-        cargarTabla(resultados);
-    }
-
-    private void limpiarCampos() {
-        txtId.setText(servicio.generarId());
+    private void limpiar() {
+        tabla.clearSelection();
+        idSeleccionado = null;
+        txtId.setText("Se asignará al registrar");
         txtTitulo.setText("");
         txtAutor.setText("");
         txtTotales.setText("");
         txtDisponibles.setText("");
-        txtBuscar.setText("");
-        tablaLibros.clearSelection();
+    }
+
+    private void exigirSeleccion() throws ValidacionException {
+        if (idSeleccionado == null) throw new ValidacionException("Selecciona un libro de la tabla.");
+    }
+
+    private interface Accion {
+        void ejecutar() throws PersistenciaException, ValidacionException;
+    }
+
+    private void ejecutar(Accion accion) {
+        try {
+            accion.ejecutar();
+        } catch (NumberFormatException e) {
+            error("Escribe un número entero entre 0 y " + Integer.MAX_VALUE + " para los ejemplares.");
+        } catch (PersistenciaException | ValidacionException | IllegalArgumentException e) {
+            error(e.getMessage());
+        }
+    }
+
+    private void error(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje, "No se pudo completar la operación", JOptionPane.ERROR_MESSAGE);
     }
 
     public static void main(String[] args) {
