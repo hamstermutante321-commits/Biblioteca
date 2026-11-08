@@ -24,14 +24,21 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
+import modelo.Libro;
 import modelo.Prestamo;
+import servicios.ServicioLibros;
 import servicios.ServicioPrestamos;
 
 public class PrestamoView extends JFrame {
     private static final Color TERRACOTA = new Color(183, 76, 64);
     private final ServicioPrestamos servicio = new ServicioPrestamos();
+    private final ServicioLibros servicioLibros = new ServicioLibros();
     private final JTextField campoUsuario = new JTextField();
+    private final JTextField campoIdLibro = new JTextField();
+    private final JTextField campoTituloLibro = new JTextField();
     private final JTextField campoBusqueda = new JTextField(15);
     private final JComboBox<String> filtroEstado = new JComboBox<>(
             new String[]{"Todos", "Activos", "Vencidos", "Devueltos"});
@@ -70,11 +77,25 @@ public class PrestamoView extends JFrame {
         }
         contenido.add(cabecera, BorderLayout.NORTH);
 
-        JPanel formulario = new JPanel(new GridLayout(3, 1, 8, 8));
+        JPanel formulario = new JPanel(new GridLayout(8, 1, 8, 8));
         formulario.setBackground(Color.WHITE);
         formulario.setBorder(BorderFactory.createTitledBorder("Nuevo préstamo"));
         formulario.add(new JLabel("ID del usuario:"));
         formulario.add(campoUsuario);
+        formulario.add(new JLabel("ID del libro:"));
+        formulario.add(campoIdLibro);
+        campoIdLibro.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent evento) { campoTituloLibro.setText(""); }
+            public void removeUpdate(DocumentEvent evento) { campoTituloLibro.setText(""); }
+            public void changedUpdate(DocumentEvent evento) { campoTituloLibro.setText(""); }
+        });
+        JButton buscarLibro = new JButton("Buscar libro");
+        aplicarEstiloBoton(buscarLibro);
+        buscarLibro.addActionListener(e -> buscarLibro());
+        formulario.add(buscarLibro);
+        campoTituloLibro.setEditable(false);
+        formulario.add(campoTituloLibro);
+        formulario.add(new JLabel("Consulta: libro aún no vinculado."));
         formulario.add(new JLabel("El plazo de devolución es de 14 días."));
 
         JButton registrar = new JButton("Registrar préstamo");
@@ -135,6 +156,27 @@ public class PrestamoView extends JFrame {
         boton.setFocusPainted(false);
         boton.setFont(new Font("SansSerif", Font.BOLD, 12));
         boton.setBorder(BorderFactory.createEmptyBorder(9, 14, 9, 14));
+    }
+
+    private void buscarLibro() {
+        String id = campoIdLibro.getText().trim();
+        campoTituloLibro.setText("");
+        if (id.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Escribe el ID de un libro.");
+            return;
+        }
+        try {
+            for (Libro libro : servicioLibros.listar()) {
+                if (libro.getId().equalsIgnoreCase(id)) {
+                    campoTituloLibro.setText(libro.getTitulo());
+                    return;
+                }
+            }
+            JOptionPane.showMessageDialog(this, "No se encontró un libro con el ID " + id + ".");
+        } catch (IllegalArgumentException error) {
+            JOptionPane.showMessageDialog(this, "No se pudieron leer los libros: " + error.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void registrarPrestamo() {
