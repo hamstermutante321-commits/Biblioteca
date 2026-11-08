@@ -7,7 +7,13 @@
 - `src/vista/LibroView.java`: formulario Swing, tabla y mensajes para el usuario.
 - `src/pruebas/PruebaServicioLibros.java`: pruebas ejecutables sin bibliotecas externas, usando carpetas temporales.
 
-Se conserva `Entidad` como clase abstracta y se usan `ValidacionException` y `PersistenciaException` existentes. `Crud` no se cambia: su contrato actual no declara las excepciones comprobadas del servicio. La integración de pantallas en `VentanaPrincipal` corresponde al responsable de integración. `PanelLibros` es el formulario anterior; ejecutar `LibroView` para este módulo.
+Los cuatro modelos son clases independientes, cada uno con un `id` privado e inmutable, validado en su constructor y consultado mediante `getId()`. No hay una clase base de identidad. Se usan `ValidacionException` y `PersistenciaException` existentes. `Crud` no se cambia: su contrato actual no declara las excepciones comprobadas del servicio. `PanelLibros` es el formulario anterior; la pantalla funcional del catálogo es `LibroView`.
+
+## Integración en la carpeta principal
+
+`biblioteca.Biblioteca` abre `VentanaPrincipal` en el hilo de eventos de Swing. Su menú **Catálogo > Libros** abre `LibroView` y reutiliza la ventana mientras siga abierta. `SistemaBiblioteca` proporciona la instancia de `ServicioLibros` que utiliza esa vista. Cerrar el catálogo permite seguir en el menú principal; reabrirlo carga los registros actuales. La navegación se configura fuera del código generado por NetBeans; el título de la etiqueta coincide en el `.java` y el `.form`.
+
+Esta integración habilita el catálogo. `ServicioUsuarios`, `ServicioPrestamos` y `DetallePrestamo` todavía están incompletos en este checkout: no hay un flujo completo de préstamos de la biblioteca. La política de historial y la coordinación entre archivos siguen siendo tareas del equipo.
 
 ## Datos
 
@@ -54,7 +60,7 @@ Cada escritura usa un archivo temporal y reemplazo del destino; se intenta movim
 
 ## Ejecutar y verificar
 
-En NetBeans: abrir este checkout y ejecutar `vista.LibroView` con Run File. La vista puede recibir una instancia de `ServicioLibros` en su constructor para la integración posterior.
+En NetBeans: abrir la carpeta principal `Biblioteca` y usar Run Project. Entrar a **Catálogo > Libros**. Para probar solo el catálogo, ejecutar `vista.LibroView` con Run File.
 
 Con un JDK 17 o superior y PowerShell, desde la raíz:
 
@@ -62,9 +68,12 @@ Con un JDK 17 o superior y PowerShell, desde la raíz:
 New-Item -ItemType Directory -Force build/classes | Out-Null
 javac -encoding UTF-8 -d build/classes (Get-ChildItem src -Filter '*.java' -Recurse | ForEach-Object FullName)
 java -cp build/classes pruebas.PruebaServicioLibros
-java -cp build/classes vista.LibroView
+java -cp build/classes pruebas.PruebaIntegracionLibros
+java -cp build/classes biblioteca.Biblioteca
 ```
 
 Las pruebas cubren CRUD, reapertura, búsquedas, préstamos/devoluciones, ID después de borrar el máximo, UTF-8, datos corruptos, contador inválido y fallos de escritura. La prueba imprime la ruta temporal que utiliza.
+
+`PruebaIntegracionLibros` requiere un escritorio gráfico. Comprueba el arranque de `Biblioteca.main`, la apertura desde el menú, la reutilización de la ventana, registro y modificación desde Swing, actualización de disponibilidad y reapertura. Sus registros se guardan en otra carpeta temporal.
 
 Comprobación manual de la vista: registrar un libro, seleccionarlo, modificarlo, buscar por título e ID, probar cantidades no numéricas, cancelar/confirmar una eliminación, cerrar y reabrir. La tabla no es editable y el botón de registro requiere limpiar la selección antes de crear un nuevo libro.
