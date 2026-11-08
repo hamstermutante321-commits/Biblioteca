@@ -8,17 +8,25 @@ package modelo;
  *
  * @author USER
  */
-public class Usuario extends Entidad {
+public class Usuario {
+    private final String id;
 
     private String nombre;
     private String dni;
     private String correo;
 
     public Usuario(String id, String nombre, String dni, String correo) {
-        super(id);
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("El id es obligatorio.");
+        }
+        this.id = id.strip();
         setCorreo(correo);
         setDni(dni);
         setNombre(nombre);
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getNombre() {
@@ -61,9 +69,13 @@ public class Usuario extends Entidad {
         this.correo = correoLimpio;
     }
 
-    @Override
     public String getEtiqueta() {
         return this.nombre;
+    }
+
+    @Override
+    public String toString() {
+        return id + "--" + getEtiqueta();
     }
 
 
