@@ -6,7 +6,8 @@ package modelo;
 
 import java.time.LocalDate;
 
-public class Prestamo extends Entidad {
+public class Prestamo {
+    private final String id;
     private final String idUsuario;
     private final LocalDate fechaPrestamo;
     private final LocalDate fechaVencimiento;
@@ -19,7 +20,10 @@ public class Prestamo extends Entidad {
 
     public Prestamo(String id, String idUsuario, LocalDate fechaPrestamo,
                     LocalDate fechaVencimiento, LocalDate fechaDevolucion) {
-        super(id);
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("El id es obligatorio.");
+        }
+        this.id = id.strip();
         if (idUsuario == null || idUsuario.isBlank()) {
             throw new IllegalArgumentException("El ID del usuario es obligatorio.");
         }
@@ -36,6 +40,10 @@ public class Prestamo extends Entidad {
         this.fechaPrestamo = fechaPrestamo;
         this.fechaVencimiento = fechaVencimiento;
         this.fechaDevolucion = fechaDevolucion;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getIdUsuario() {
@@ -75,8 +83,12 @@ public class Prestamo extends Entidad {
         this.fechaDevolucion = fechaDevolucion;
     }
 
-    @Override
     public String getEtiqueta() {
         return "Préstamo del usuario " + idUsuario;
+    }
+
+    @Override
+    public String toString() {
+        return id + "--" + getEtiqueta();
     }
 }
