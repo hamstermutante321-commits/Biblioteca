@@ -67,7 +67,6 @@ Git y GitHub.
 ```text
 src/
 ├── modelo/
-│   ├── Entidad.java
 │   ├── Usuario.java
 │   ├── Libro.java
 │   ├── Prestamo.java

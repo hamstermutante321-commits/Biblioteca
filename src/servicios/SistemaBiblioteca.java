@@ -9,5 +9,17 @@ package servicios;
  * @author USER
  */
 public class SistemaBiblioteca {
-    
+    private final ServicioLibros servicioLibros;
+
+    public SistemaBiblioteca() {
+        this(new ServicioLibros());
+    }
+
+    public SistemaBiblioteca(ServicioLibros servicioLibros) {
+        this.servicioLibros = java.util.Objects.requireNonNull(servicioLibros);
+    }
+
+    public ServicioLibros getServicioLibros() {
+        return servicioLibros;
+    }
 }
