@@ -5,18 +5,26 @@
 package modelo;
 
 
-public class Libro extends Entidad {
+public class Libro {
+    private final String id;
     private String titulo;
     private String autor;
     private int ejemplaresTotales;
     private int ejemplaresDisponibles;
 
     public Libro(String id, String titulo, String autor, int ejemplaresTotales, int ejemplaresDisponibles) {
-        super(id);
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("El id es obligatorio.");
+        }
+        this.id = id.strip();
         setTitulo(titulo);
         setAutor(autor);
         setEjemplaresTotales(ejemplaresTotales);
         setEjemplaresDisponibles(ejemplaresDisponibles);
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getTitulo() {
@@ -86,9 +94,13 @@ public class Libro extends Entidad {
         setEjemplaresDisponibles(ejemplaresDisponibles + cantidad);
     }
 
-    @Override
     public String getEtiqueta() {
         return titulo;
+    }
+
+    @Override
+    public String toString() {
+        return id + "--" + getEtiqueta();
     }
 
 }

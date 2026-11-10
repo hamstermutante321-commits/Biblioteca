@@ -4,7 +4,7 @@
 
 ### Gestión de usuarios, libros y préstamos
 
-<img src="https://img.shields.io/badge/Java-17-1565C0?style=for-the-badge&logo=openjdk&logoColor=white">
+<img src="https://img.shields.io/badge/Java-26-1565C0?style=for-the-badge&logo=openjdk&logoColor=white">
 <img src="https://img.shields.io/badge/Swing-Interfaz%20gráfica-00897B?style=for-the-badge">
 <img src="https://img.shields.io/badge/Estado-En%20desarrollo-F9A825?style=for-the-badge">
 
@@ -56,7 +56,7 @@ Préstamo: relaciona a un usuario con uno o varios libros determinados que el us
 DetallePrestamo: representa cada libro incluido en el prestamo.
 ```
 Se usará:
-Java 17 o superior.
+Java 26.
 Java Swing.
 Programación Orientada a Objetos.
 Apache NetBeans.
@@ -67,7 +67,6 @@ Git y GitHub.
 ```text
 src/
 ├── modelo/
-│   ├── Entidad.java
 │   ├── Usuario.java
 │   ├── Libro.java
 │   ├── Prestamo.java
