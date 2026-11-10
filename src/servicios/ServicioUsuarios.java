@@ -3,56 +3,76 @@ package servicios;
 import excepciones.PersistenciaException;
 import excepciones.ValidacionException;
 import modelo.Usuario;
-import persistencia.ArchivosDatos;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-/** Administra usuarios y su persistencia en datos/usuarios.txt. */
+/** Administra usuarios y sus archivos de datos y secuencia. */
 public class ServicioUsuarios implements Crud<Usuario> {
 
     private static final String PREFIJO_ID = "U";
-    private final ArchivosDatos archivos;
+    private static final Object BLOQUEO = new Object();
+    private final Path archivo;
+    private final Path secuencia;
 
     public ServicioUsuarios() {
-        this(new ArchivosDatos());
+        this(Paths.get("datos", "usuarios.txt"));
     }
 
-    /** Permite inyectar la carpeta de datos, por ejemplo en otra instalación. */
-    public ServicioUsuarios(ArchivosDatos archivos) {
-        this.archivos = Objects.requireNonNull(archivos, "El acceso a archivos es obligatorio");
+    /** Permite usar un archivo temporal o una carpeta de datos distinta. */
+    public ServicioUsuarios(Path archivo) {
+        this.archivo = Objects.requireNonNull(archivo, "El archivo de usuarios es obligatorio")
+                .toAbsolutePath().normalize();
+        this.secuencia = this.archivo.resolveSibling("usuarios-secuencia.txt");
     }
 
     /**
-     * Registra un usuario y le asigna un ID nuevo (U00001, U00002, ...).
-     * El ID asignado queda guardado como parte del usuario.
+     * Registra un usuario con un ID nuevo (U00001, U00002, ...).
+     * El ID queda reservado incluso si el usuario se elimina posteriormente.
      */
-    public synchronized Usuario registrar(String nombre, String dni, String correo)
+    public Usuario registrar(String nombre, String dni, String correo)
             throws ValidacionException, PersistenciaException {
-        validarCampos(nombre, dni, correo);
-        if (buscarPorDni(dni) != null) {
-            throw new ValidacionException("Ya existe un usuario con ese DNI.");
-        }
-        Usuario usuario = new Usuario(generarId(), nombre, dni, correo);
-        crear(usuario);
-        return usuario;
-    }
-
-    /** Devuelve null si el ID no está registrado, acuerdo usado por el módulo de préstamos. */
-    public synchronized Usuario buscarPorId(String id) throws PersistenciaException {
-        if (id == null || id.isBlank()) {
-            return null;
-        }
-        for (Usuario usuario : listar()) {
-            if (usuario.getId().equalsIgnoreCase(id.strip())) {
-                return usuario;
+        synchronized (BLOQUEO) {
+            validarCampos(nombre, dni, correo);
+            List<Usuario> usuarios = leer();
+            asegurarDniDisponible(usuarios, dni, null);
+            int siguiente = ultimoNumero(usuarios) + 1;
+            if (siguiente > 99999) {
+                throw new ValidacionException("Se agotaron los IDs de usuario U00001 a U99999.");
             }
+            String id = String.format(Locale.ROOT, "%s%05d", PREFIJO_ID, siguiente);
+            Usuario usuario = construir(id, nombre, dni, correo);
+            guardarAtomico(secuencia, List.of(Integer.toString(siguiente)));
+            usuarios.add(usuario);
+            guardar(usuarios);
+            return usuario;
         }
-        return null;
     }
 
-    public synchronized Usuario buscarPorDni(String dni) throws PersistenciaException {
+    /** Busca por ID; lanza ValidacionException si no existe, igual que ServicioLibros. */
+    public Usuario buscarPorId(String id) throws PersistenciaException, ValidacionException {
+        synchronized (BLOQUEO) {
+            if (id == null || id.isBlank()) {
+                throw new ValidacionException("Indica un ID de usuario.");
+            }
+            for (Usuario usuario : leer()) {
+                if (usuario.getId().equalsIgnoreCase(id.strip())) {
+                    return usuario;
+                }
+            }
+            throw new ValidacionException("No existe un usuario con ID " + id.strip() + ".");
+        }
+    }
+
+    public Usuario buscarPorDni(String dni) throws PersistenciaException {
         if (dni == null || dni.isBlank()) {
             return null;
         }
@@ -65,7 +85,7 @@ public class ServicioUsuarios implements Crud<Usuario> {
         return null;
     }
 
-    public synchronized List<Usuario> buscar(String filtro) throws PersistenciaException {
+    public List<Usuario> buscar(String filtro) throws PersistenciaException {
         String texto = filtro == null ? "" : filtro.strip().toLowerCase(Locale.ROOT);
         List<Usuario> coincidencias = new ArrayList<>();
         for (Usuario usuario : listar()) {
@@ -79,103 +99,156 @@ public class ServicioUsuarios implements Crud<Usuario> {
         return coincidencias;
     }
 
-    public synchronized List<Usuario> listar() throws PersistenciaException {
-        List<Usuario> usuarios = new ArrayList<>();
-        for (String linea : archivos.leerUsuarios()) {
-            if (linea.isBlank()) {
-                continue;
-            }
-            String[] campos = linea.split("\\|", -1);
-            if (campos.length != 4) {
-                throw new PersistenciaException("Registro de usuario inválido en usuarios.txt: " + linea);
-            }
-            try {
-                usuarios.add(new Usuario(campos[0], campos[1], campos[2], campos[3]));
-            } catch (IllegalArgumentException error) {
-                throw new PersistenciaException("Registro de usuario inválido en usuarios.txt: " + linea, error);
-            }
+    public List<Usuario> listar() throws PersistenciaException {
+        synchronized (BLOQUEO) {
+            return leer();
         }
-        return usuarios;
     }
 
     @Override
-    public synchronized void crear(Usuario usuario)
-            throws ValidacionException, PersistenciaException {
+    public void crear(Usuario usuario) throws ValidacionException, PersistenciaException {
         Objects.requireNonNull(usuario, "El usuario es obligatorio");
-        validarCampos(usuario.getNombre(), usuario.getDni(), usuario.getCorreo());
-        if (!usuario.getId().matches("U\\d{5,}")) {
-            throw new ValidacionException("El ID del usuario debe tener el formato U00001.");
-        }
-        List<Usuario> usuarios = listar();
-        for (Usuario existente : usuarios) {
-            if (existente.getId().equalsIgnoreCase(usuario.getId())) {
-                throw new ValidacionException("Ya existe un usuario con ese ID.");
+        synchronized (BLOQUEO) {
+            validarCampos(usuario.getNombre(), usuario.getDni(), usuario.getCorreo());
+            int numero = leerNumeroId(usuario.getId());
+            List<Usuario> usuarios = leer();
+            for (Usuario existente : usuarios) {
+                if (existente.getId().equalsIgnoreCase(usuario.getId())) {
+                    throw new ValidacionException("Ya existe un usuario con ese ID.");
+                }
             }
-            if (existente.getDni().equalsIgnoreCase(usuario.getDni())) {
+            asegurarDniDisponible(usuarios, usuario.getDni(), null);
+            int ultimo = ultimoNumero(usuarios);
+            if (numero <= ultimo) {
+                throw new ValidacionException("El ID ya fue usado o está reservado: " + usuario.getId());
+            }
+            guardarAtomico(secuencia, List.of(Integer.toString(numero)));
+            usuarios.add(usuario);
+            guardar(usuarios);
+        }
+    }
+
+    @Override
+    public void actualizar(Usuario usuario) throws ValidacionException, PersistenciaException {
+        Objects.requireNonNull(usuario, "El usuario es obligatorio");
+        synchronized (BLOQUEO) {
+            validarCampos(usuario.getNombre(), usuario.getDni(), usuario.getCorreo());
+            List<Usuario> usuarios = leer();
+            boolean encontrado = false;
+            for (Usuario existente : usuarios) {
+                if (existente.getId().equalsIgnoreCase(usuario.getId())) {
+                    encontrado = true;
+                } else if (existente.getDni().equalsIgnoreCase(usuario.getDni())) {
+                    throw new ValidacionException("Ya existe otro usuario con ese DNI.");
+                }
+            }
+            if (!encontrado) {
+                throw new ValidacionException("No existe el usuario que se desea modificar.");
+            }
+            for (int i = 0; i < usuarios.size(); i++) {
+                if (usuarios.get(i).getId().equalsIgnoreCase(usuario.getId())) {
+                    usuarios.set(i, usuario);
+                    break;
+                }
+            }
+            guardar(usuarios);
+        }
+    }
+
+    @Override
+    public void eliminar(String id) throws ValidacionException, PersistenciaException {
+        synchronized (BLOQUEO) {
+            if (id == null || id.isBlank()) {
+                throw new ValidacionException("Indica un ID de usuario.");
+            }
+            List<Usuario> usuarios = leer();
+            int ultimo = ultimoNumero(usuarios);
+            boolean eliminado = usuarios.removeIf(usuario -> usuario.getId().equalsIgnoreCase(id.strip()));
+            if (!eliminado) {
+                throw new ValidacionException("No existe el usuario que se desea eliminar.");
+            }
+            // Mantiene reservado el ID más alto aunque se borre el último registro.
+            guardarAtomico(secuencia, List.of(Integer.toString(ultimo)));
+            guardar(usuarios);
+        }
+    }
+
+    private int ultimoNumero(List<Usuario> usuarios) throws PersistenciaException {
+        int mayor = 0;
+        for (Usuario usuario : usuarios) {
+            String id = usuario.getId();
+            if (id.matches(PREFIJO_ID + "\\d{5}")) {
+                mayor = Math.max(mayor, Integer.parseInt(id.substring(1)));
+            }
+        }
+        if (Files.exists(secuencia)) {
+            try {
+                List<String> lineas = Files.readAllLines(secuencia, StandardCharsets.UTF_8);
+                if (!lineas.isEmpty()) {
+                    mayor = Math.max(mayor, Integer.parseInt(lineas.get(0).strip()));
+                }
+            } catch (IOException | NumberFormatException error) {
+                throw new PersistenciaException("No se pudo leer la secuencia de IDs de usuarios.", error);
+            }
+        }
+        return mayor;
+    }
+
+    private int leerNumeroId(String id) throws ValidacionException {
+        if (id == null || !id.matches(PREFIJO_ID + "\\d{5}")) {
+            throw new ValidacionException("El ID debe tener el formato U00001.");
+        }
+        int numero = Integer.parseInt(id.substring(1));
+        if (numero < 1) {
+            throw new ValidacionException("El ID de usuario debe ser mayor que cero.");
+        }
+        return numero;
+    }
+
+    private void asegurarDniDisponible(List<Usuario> usuarios, String dni, String idIgnorado)
+            throws ValidacionException {
+        for (Usuario existente : usuarios) {
+            if (!existente.getId().equalsIgnoreCase(idIgnorado == null ? "" : idIgnorado)
+                    && existente.getDni().equalsIgnoreCase(dni.strip())) {
                 throw new ValidacionException("Ya existe un usuario con ese DNI.");
             }
         }
-        usuarios.add(usuario);
-        guardar(usuarios);
     }
 
-    @Override
-    public synchronized void actualizar(Usuario usuario)
-            throws ValidacionException, PersistenciaException {
-        Objects.requireNonNull(usuario, "El usuario es obligatorio");
-        validarCampos(usuario.getNombre(), usuario.getDni(), usuario.getCorreo());
-        List<Usuario> usuarios = listar();
-        boolean encontrado = false;
-        for (int i = 0; i < usuarios.size(); i++) {
-            Usuario existente = usuarios.get(i);
-            if (existente.getId().equalsIgnoreCase(usuario.getId())) {
-                encontrado = true;
-            } else if (existente.getDni().equalsIgnoreCase(usuario.getDni())) {
-                throw new ValidacionException("Ya existe otro usuario con ese DNI.");
-            }
+    private Usuario construir(String id, String nombre, String dni, String correo)
+            throws ValidacionException {
+        try {
+            return new Usuario(id, nombre, dni, correo);
+        } catch (IllegalArgumentException error) {
+            throw new ValidacionException(error.getMessage(), error);
         }
-        if (!encontrado) {
-            throw new ValidacionException("No existe el usuario que se desea modificar.");
-        }
-        for (int i = 0; i < usuarios.size(); i++) {
-            if (usuarios.get(i).getId().equalsIgnoreCase(usuario.getId())) {
-                usuarios.set(i, usuario);
-                break;
-            }
-        }
-        guardar(usuarios);
     }
 
-    @Override
-    public synchronized void eliminar(String id)
-            throws ValidacionException, PersistenciaException {
-        if (id == null || id.isBlank()) {
-            throw new ValidacionException("El ID del usuario es obligatorio.");
+    private List<Usuario> leer() throws PersistenciaException {
+        List<Usuario> usuarios = new ArrayList<>();
+        if (!Files.exists(archivo)) {
+            return usuarios;
         }
-        List<Usuario> usuarios = listar();
-        boolean eliminado = usuarios.removeIf(usuario -> usuario.getId().equalsIgnoreCase(id.strip()));
-        if (!eliminado) {
-            throw new ValidacionException("No existe el usuario que se desea eliminar.");
-        }
-        guardar(usuarios);
-    }
-
-    private String generarId() throws PersistenciaException {
-        int mayor = 0;
-        for (Usuario usuario : listar()) {
-            String id = usuario.getId();
-            if (id.matches(PREFIJO_ID + "\\d{5,}")) {
-                try {
-                    mayor = Math.max(mayor, Integer.parseInt(id.substring(1)));
-                } catch (NumberFormatException error) {
-                    throw new PersistenciaException("El ID de usuario excede el límite permitido: " + id, error);
+        try {
+            List<String> lineas = Files.readAllLines(archivo, StandardCharsets.UTF_8);
+            int numeroLinea = 0;
+            for (String linea : lineas) {
+                numeroLinea++;
+                if (linea.isBlank()) {
+                    continue;
                 }
+                String[] campos = linea.split("\\|", -1);
+                if (campos.length != 4) {
+                    throw new PersistenciaException("Formato inválido en usuarios.txt, línea " + numeroLinea + ".");
+                }
+                usuarios.add(construir(campos[0], campos[1], campos[2], campos[3]));
             }
+            return usuarios;
+        } catch (IOException error) {
+            throw new PersistenciaException("No se pudo leer " + archivo + ".", error);
+        } catch (ValidacionException error) {
+            throw new PersistenciaException("Hay un registro inválido en " + archivo + ".", error);
         }
-        if (mayor == Integer.MAX_VALUE) {
-            throw new PersistenciaException("Se agotaron los IDs disponibles para usuarios.");
-        }
-        return String.format(Locale.ROOT, "%s%05d", PREFIJO_ID, mayor + 1);
     }
 
     private void guardar(List<Usuario> usuarios) throws PersistenciaException {
@@ -184,7 +257,36 @@ public class ServicioUsuarios implements Crud<Usuario> {
             lineas.add(String.join("|", usuario.getId(), usuario.getNombre(),
                     usuario.getDni(), usuario.getCorreo()));
         }
-        archivos.guardarUsuarios(lineas);
+        guardarAtomico(archivo, lineas);
+    }
+
+    private void guardarAtomico(Path destino, List<String> lineas) throws PersistenciaException {
+        Path temporal = null;
+        try {
+            Path carpeta = destino.getParent();
+            if (carpeta != null) {
+                Files.createDirectories(carpeta);
+            }
+            Path carpetaTemporal = carpeta == null ? Paths.get(".").toAbsolutePath() : carpeta;
+            temporal = Files.createTempFile(carpetaTemporal, "usuarios-", ".tmp");
+            Files.write(temporal, lineas, StandardCharsets.UTF_8);
+            try {
+                Files.move(temporal, destino, StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException error) {
+                Files.move(temporal, destino, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException error) {
+            throw new PersistenciaException("No se pudo guardar " + destino + ".", error);
+        } finally {
+            if (temporal != null) {
+                try {
+                    Files.deleteIfExists(temporal);
+                } catch (IOException ignored) {
+                    // El archivo temporal queda fuera del catálogo si no se pudo borrar.
+                }
+            }
+        }
     }
 
     private void validarCampos(String nombre, String dni, String correo) throws ValidacionException {
