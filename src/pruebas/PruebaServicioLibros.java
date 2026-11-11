@@ -34,6 +34,8 @@ public class PruebaServicioLibros {
         comprobar(primero.getTitulo().equals("El principito"));
         comprobar(new ServicioLibros(archivo).buscarPorId("L00001").getAutor().equals("Saint-Exupéry"));
         comprobar(servicio.buscar("PRINCIPITO").size() == 1);
+        comprobar(servicio.buscar("EXUPÉRY").size() == 1);
+        comprobar(servicio.buscar("l00001").size() == 1);
         comprobar(servicio.buscar("inexistente").isEmpty());
         esperarError(ValidacionException.class, () -> servicio.buscarPorId("L99999"));
         esperarError(ValidacionException.class, () -> servicio.registrar("", "Autor", 1));

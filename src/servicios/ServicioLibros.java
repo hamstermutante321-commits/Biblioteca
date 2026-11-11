@@ -18,7 +18,8 @@ public class ServicioLibros {
         this(Paths.get("datos", "libros.txt"));
     }
 
-    /** Permite probar el servicio con una carpeta distinta de los datos reales. */
+    /** Permite probar el servicio con una carpeta distinta de los datos reales.
+     * @param archivo */
     public ServicioLibros(Path archivo) {
         this.archivo = Objects.requireNonNull(archivo).toAbsolutePath().normalize();
         this.secuencia = this.archivo.resolveSibling("libros-secuencia.txt");
@@ -40,7 +41,9 @@ public class ServicioLibros {
         String filtro = titulo == null ? "" : titulo.strip().toLowerCase(Locale.ROOT);
         List<Libro> resultado = new ArrayList<>();
         for (Libro libro : listar()) {
-            if (libro.getTitulo().toLowerCase(Locale.ROOT).contains(filtro)) resultado.add(libro);
+            if (libro.getTitulo().toLowerCase(Locale.ROOT).contains(filtro)
+                    || libro.getAutor().toLowerCase(Locale.ROOT).contains(filtro)
+                    || libro.getId().toLowerCase(Locale.ROOT).contains(filtro)) resultado.add(libro);
         }
         return resultado;
     }
