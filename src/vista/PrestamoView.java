@@ -28,6 +28,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import excepciones.PersistenciaException;
+import excepciones.ValidacionException;
 import modelo.Libro;
 import modelo.Prestamo;
 import servicios.ServicioLibros;
@@ -183,11 +184,14 @@ public class PrestamoView extends JFrame {
     private void registrarPrestamo() {
         try {
             String idUsuario = campoUsuario.getText().trim();
-            Prestamo prestamo = servicio.crear(idUsuario, LocalDate.now());
+            String idLibro = campoIdLibro.getText().trim();
+            Prestamo prestamo = servicio.crear(idUsuario, idLibro, LocalDate.now());
             campoUsuario.setText("");
+            campoIdLibro.setText("");
+            campoTituloLibro.setText("");
             cargarTabla();
             JOptionPane.showMessageDialog(this, "Préstamo " + prestamo.getId() + " registrado.");
-        } catch (IllegalArgumentException | IOException error) {
+        } catch (IllegalArgumentException | IOException | PersistenciaException | ValidacionException error) {
             JOptionPane.showMessageDialog(this, error.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }

@@ -1,5 +1,9 @@
 package servicios;
 
+import excepciones.PersistenciaException;
+import excepciones.ValidacionException;
+import modelo.Libro;
+import modelo.Usuario;
 import modelo.Prestamo;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -67,7 +71,38 @@ public class ServicioPrestamos {
         return String.format("P%05d", mayor + 1);
     }
 
-    public Prestamo crear(String idUsuario, LocalDate fechaPrestamo) throws IOException {
+    public Prestamo crear(String idUsuario, String idLibro, LocalDate fechaPrestamo)
+            throws IOException, PersistenciaException, ValidacionException {
+        Path carpeta = archivo.toAbsolutePath().getParent();
+        ServicioUsuarios usuarios = new ServicioUsuarios(carpeta.resolve("usuarios.txt"));
+        ServicioLibros libros = new ServicioLibros(carpeta.resolve("libros.txt"));
+        ServicioDetallePrestamo detalles = new ServicioDetallePrestamo(
+                libros, this, carpeta.resolve("detalles_prestamo.txt"));
+
+        Usuario usuario = usuarios.buscarPorId(idUsuario);
+        Libro libro = libros.buscarPorId(idLibro);
+        if (libro.getEjemplaresDisponibles() < 1) {
+            throw new ValidacionException("No hay ejemplares disponibles de este libro.");
+        }
+
+        Prestamo prestamo = crearCabecera(usuario.getId(), fechaPrestamo);
+        try {
+            detalles.agregar(prestamo.getId(), libro.getId(), 1);
+        } catch (IOException | PersistenciaException | ValidacionException | IllegalArgumentException error) {
+            // Si no se guardó el detalle, retiramos la cabecera recién creada.
+            try {
+                List<Prestamo> prestamos = listar();
+                prestamos.removeIf(p -> p.getId().equals(prestamo.getId()));
+                guardarTodos(prestamos);
+            } catch (IOException errorAlRevertir) {
+                throw new IOException("No se completó el préstamo ni se pudo retirar su cabecera. Revisa los datos.", errorAlRevertir);
+            }
+            throw error;
+        }
+        return prestamo;
+    }
+
+    private Prestamo crearCabecera(String idUsuario, LocalDate fechaPrestamo) throws IOException {
         if (idUsuario != null && (idUsuario.contains("|") || idUsuario.contains("\n") || idUsuario.contains("\r")))
             throw new IllegalArgumentException("El ID de usuario no puede contener | ni saltos de línea.");
         if (fechaPrestamo == null) throw new IllegalArgumentException("La fecha del préstamo es obligatoria.");
