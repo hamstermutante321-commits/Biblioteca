@@ -6,6 +6,7 @@ package vista;
 public class VentanaPrincipal extends javax.swing.JFrame {
     private final servicios.SistemaBiblioteca sistema;
     private LibroView vistaLibros;
+    private PrestamoView vistaPrestamos;
     
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(VentanaPrincipal.class.getName());
@@ -29,6 +30,9 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         javax.swing.JMenuItem libros = new javax.swing.JMenuItem("Libros");
         libros.addActionListener(evento -> abrirLibros());
         catalogo.add(libros);
+        javax.swing.JMenuItem prestamos = new javax.swing.JMenuItem("Préstamos");
+        prestamos.addActionListener(evento -> abrirPrestamos());
+        catalogo.add(prestamos);
         barra.add(catalogo);
         setJMenuBar(barra);
         pack();
@@ -42,9 +46,18 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         vistaLibros.toFront();
     }
 
+    private void abrirPrestamos() {
+        if (vistaPrestamos == null || !vistaPrestamos.isDisplayable()) {
+            vistaPrestamos = new PrestamoView();
+        }
+        vistaPrestamos.setVisible(true);
+        vistaPrestamos.toFront();
+    }
+
     @Override
     public void dispose() {
         if (vistaLibros != null) vistaLibros.dispose();
+        if (vistaPrestamos != null) vistaPrestamos.dispose();
         super.dispose();
     }
 

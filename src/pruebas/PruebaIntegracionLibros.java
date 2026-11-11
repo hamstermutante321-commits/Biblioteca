@@ -24,7 +24,7 @@ public class PruebaIntegracionLibros {
     }
     private static JTextField campo(LibroView vista, String etiqueta) {
         for (Component componente : componentes(vista)) {
-            if (componente instanceof JLabel && ((JLabel) componente).getText().equals(etiqueta)) {
+            if (componente instanceof JLabel && etiqueta.equals(((JLabel) componente).getText())) {
                 return (JTextField) ((JLabel) componente).getLabelFor();
             }
         }
@@ -53,6 +53,27 @@ public class PruebaIntegracionLibros {
     private static JTable tabla(LibroView vista) {
         return (JTable) componentes(vista).stream().filter(c -> c instanceof JTable).findFirst().orElseThrow();
     }
+    private static void accionFila(LibroView vista, String accion) {
+        JTable tabla = tabla(vista);
+        tabla.editCellAt(0, tabla.getColumnModel().getColumnIndex("Acciones"));
+        for (Component c : componentes(tabla.getEditorComponent())) {
+            if (c instanceof JButton && accion.equals(((JButton) c).getToolTipText())) {
+                ((JButton) c).doClick();
+                return;
+            }
+        }
+        throw new AssertionError("Falta la acción " + accion);
+    }
+    private static void eliminarConRespuesta(LibroView vista, int respuesta) {
+        Timer responder = new Timer(100, evento -> {
+            for (Window w : Window.getWindows()) if (w instanceof JDialog && w.isShowing()) {
+                for (Component c : componentes(w)) if (c instanceof JOptionPane) ((JOptionPane) c).setValue(respuesta);
+            }
+        });
+        responder.start();
+        try { accionFila(vista, "Eliminar"); }
+        finally { responder.stop(); }
+    }
     public static void main(String[] args) throws Exception {
         Path carpeta = Files.createTempDirectory("integracion-biblioteca-");
         ServicioLibros servicio = new ServicioLibros(carpeta.resolve("libros.txt"));
@@ -68,21 +89,31 @@ public class PruebaIntegracionLibros {
                 campo(vista, "Título").setText("Biblioteca integrada");
                 campo(vista, "Autor").setText("Autor de prueba");
                 campo(vista, "Ejemplares totales").setText("4");
-                pulsar(vista, "Registrar");
+                pulsar(vista, "Guardar libro");
                 if (tabla(vista).getRowCount() != 1 || tabla(vista).isCellEditable(0, 0)) throw new AssertionError("Tabla incorrecta");
                 servicio.prestarEjemplares("L00001", 2);
                 pulsar(vista, "Ver todos");
-                if (!tabla(vista).getValueAt(0, 4).equals(2)) throw new AssertionError("Stock desactualizado");
+                if (!tabla(vista).getValueAt(0, tabla(vista).getColumnModel().getColumnIndex("Disponibles")).equals(2)) throw new AssertionError("Stock desactualizado");
                 tabla(vista).setRowSelectionInterval(0, 0);
                 campo(vista, "Ejemplares totales").setText("3");
                 campo(vista, "Título").setText("Biblioteca actualizada");
-                pulsar(vista, "Modificar");
+                pulsar(vista, "Guardar cambios");
                 Libro libro = servicio.buscarPorId("L00001");
                 if (libro.getEjemplaresDisponibles() != 1 || !libro.getTitulo().equals("Biblioteca actualizada")) throw new AssertionError("Inventario inconsistente");
                 servicio.devolverEjemplares("L00001", 2);
                 vista.dispose();
                 principal.getJMenuBar().getMenu(0).getItem(0).doClick();
-                if (!tabla(catalogoAbierto()).getValueAt(0, 4).equals(3)) throw new AssertionError("Reapertura incorrecta");
+                JTable reabierta = tabla(catalogoAbierto());
+                if (!reabierta.getValueAt(0, reabierta.getColumnModel().getColumnIndex("Disponibles")).equals(3)) throw new AssertionError("Reapertura incorrecta");
+                LibroView abierta = catalogoAbierto();
+                accionFila(abierta, "Ver detalle");
+                if (campo(abierta, "Título").isEditable()) throw new AssertionError("Detalle editable");
+                accionFila(abierta, "Editar");
+                if (!campo(abierta, "Título").isEditable()) throw new AssertionError("Edición deshabilitada");
+                eliminarConRespuesta(abierta, JOptionPane.NO_OPTION);
+                if (servicio.listar().size() != 1) throw new AssertionError("Se ignoró la cancelación");
+                eliminarConRespuesta(abierta, JOptionPane.YES_OPTION);
+                if (!servicio.listar().isEmpty() || tabla(abierta).getRowCount() != 0) throw new AssertionError("No se eliminó el registro");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             } finally {

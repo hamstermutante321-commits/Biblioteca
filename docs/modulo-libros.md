@@ -15,6 +15,14 @@ Los cuatro modelos son clases independientes, cada uno con un `id` privado e inm
 
 Esta integración habilita el catálogo. `ServicioUsuarios`, `ServicioPrestamos` y `DetallePrestamo` todavía están incompletos en este checkout: no hay un flujo completo de préstamos de la biblioteca. La política de historial y la coordinación entre archivos siguen siendo tareas del equipo.
 
+## Vista del catálogo
+
+La pantalla usa un menú lateral, una tabla con acciones por fila y un formulario a la derecha, con fondo crema, títulos granate y botones terracota. Las miniaturas de portada son decorativas y se dibujan en Swing; el modelo no guarda imágenes. Las opciones Usuarios y Préstamos permanecen deshabilitadas hasta integrar esos módulos. Inicio regresa a la ventana principal.
+
+La búsqueda filtra al escribir por título, autor o ID, sin distinguir mayúsculas. **Nuevo libro** abre un formulario vacío y **Guardar libro** registra el libro. El ID se asigna al guardar. Seleccionar una fila o pulsar el lápiz permite editar; el ojo muestra los datos sin permitir cambios y la papelera solicita confirmación antes de eliminar. **Cancelar** limpia el formulario y **Ver todos** elimina el filtro.
+
+La disponibilidad se muestra en verde si hay más de un ejemplar, amarillo si queda uno y rojo si no queda ninguno. Es un campo de solo lectura que depende de los préstamos y las devoluciones. En ventanas pequeñas, la tabla permite desplazamiento horizontal y el formulario permite desplazamiento vertical.
+
 ## Datos
 
 Ejecutar desde la raíz del proyecto para que las rutas sean consistentes.
@@ -48,7 +56,7 @@ void prestarEjemplares(String id, int cantidad);
 void devolverEjemplares(String id, int cantidad);
 ```
 
-Las firmas reales declaran `PersistenciaException` y, cuando corresponde, `ValidacionException`. `buscarPorId` lanza `ValidacionException` si no existe; no devuelve null. `buscar` devuelve una lista vacía sin coincidencias. `registrar` genera el ID antes de construir el objeto, lo guarda y devuelve el libro registrado. Los getters no modifican archivos: modificar el objeto que devuelve una búsqueda tampoco actualiza el catálogo; usar el servicio para persistir operaciones.
+Las firmas reales declaran `PersistenciaException` y, cuando corresponde, `ValidacionException`. `buscarPorId` lanza `ValidacionException` si no existe; no devuelve null. `buscar` busca coincidencias parciales en título, autor e ID y devuelve una lista vacía sin coincidencias. `registrar` genera el ID antes de construir el objeto, lo guarda y devuelve el libro registrado. Los getters no modifican archivos: modificar el objeto que devuelve una búsqueda tampoco actualiza el catálogo; usar el servicio para persistir operaciones.
 
 Un libro nuevo tiene todos sus ejemplares disponibles. La modificación del total preserva los prestados: si hay 5 totales y 3 disponibles, hay 2 prestados; aumentar el total a 7 deja 5 disponibles. No se puede reducir el total por debajo de esos 2 prestados. La vista no permite escribir directamente la disponibilidad.
 
@@ -74,6 +82,6 @@ java -cp build/classes biblioteca.Biblioteca
 
 Las pruebas cubren CRUD, reapertura, búsquedas, préstamos/devoluciones, ID después de borrar el máximo, UTF-8, datos corruptos, contador inválido y fallos de escritura. La prueba imprime la ruta temporal que utiliza.
 
-`PruebaIntegracionLibros` requiere un escritorio gráfico. Comprueba el arranque de `Biblioteca.main`, la apertura desde el menú, la reutilización de la ventana, registro y modificación desde Swing, actualización de disponibilidad y reapertura. Sus registros se guardan en otra carpeta temporal.
+`PruebaIntegracionLibros` requiere un escritorio gráfico. Comprueba el arranque de `Biblioteca.main`, la apertura desde el menú, la reutilización de la ventana, registro y modificación desde Swing, actualización de disponibilidad, reapertura y acciones por fila: consulta de solo lectura, edición y eliminación cancelada o confirmada. Sus registros se guardan en otra carpeta temporal.
 
-Comprobación manual de la vista: registrar un libro, seleccionarlo, modificarlo, buscar por título e ID, probar cantidades no numéricas, cancelar/confirmar una eliminación, cerrar y reabrir. La tabla no es editable y el botón de registro requiere limpiar la selección antes de crear un nuevo libro.
+Comprobación manual de la vista: registrar un libro, seleccionarlo, modificarlo, buscar por título, autor e ID, probar cantidades no numéricas, cancelar/confirmar una eliminación, cerrar y reabrir. Los datos de la tabla no se editan directamente; la columna Acciones contiene los botones de cada libro. Usar **Nuevo libro** para iniciar otro registro.
