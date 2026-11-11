@@ -83,12 +83,32 @@ public class ServicioPrestamos {
         List<Prestamo> prestamos = listar();
         for (Prestamo prestamo : prestamos) {
             if (prestamo.getId().equals(id)) {
+                verificarSinDetalles(id);
                 prestamo.registrarDevolucion(fecha);
                 guardarTodos(prestamos);
                 return;
             }
         }
         throw new IllegalArgumentException("No se encontró el préstamo " + id);
+    }
+
+    // Hasta integrar la devolución completa, evita dejar libros descontados.
+    private void verificarSinDetalles(String id) throws IOException {
+        Path detalles = archivo.toAbsolutePath().resolveSibling("detalles_prestamo.txt");
+        if (!Files.exists(detalles)) return;
+        try (BufferedReader lector = Files.newBufferedReader(detalles, StandardCharsets.UTF_8)) {
+            String linea;
+            while ((linea = lector.readLine()) != null) {
+                if (linea.isBlank()) continue;
+                String[] campos = linea.split("\\|", -1);
+                if (campos.length != 3) {
+                    throw new IOException("No se puede verificar el archivo de detalles: formato inválido.");
+                }
+                if (campos[0].equals(id)) {
+                    throw new IllegalStateException("Primero retira los libros desde Detalle de préstamo para devolver sus ejemplares.");
+                }
+            }
+        }
     }
 
     private void guardarTodos(List<Prestamo> prestamos) throws IOException {
