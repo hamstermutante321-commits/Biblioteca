@@ -22,8 +22,41 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         this.sistema = java.util.Objects.requireNonNull(sistema);
         initComponents();
         configurarNavegacion();
+        crearPantallaPrincipal();
         setTitle("Biblioteca - Menú principal");
         setLocationRelativeTo(null);
+    }
+
+    private void crearPantallaPrincipal() {
+        javax.swing.JPanel principal = new javax.swing.JPanel(new java.awt.BorderLayout(15, 15));
+        principal.setBorder(javax.swing.BorderFactory.createEmptyBorder(25, 25, 25, 25));
+
+        javax.swing.JLabel titulo = new javax.swing.JLabel("Sistema de biblioteca", javax.swing.SwingConstants.CENTER);
+        titulo.setFont(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 22));
+        principal.add(titulo, java.awt.BorderLayout.NORTH);
+
+        javax.swing.JPanel botones = new javax.swing.JPanel(new java.awt.GridLayout(2, 2, 12, 12));
+        javax.swing.JButton libros = new javax.swing.JButton("Libros");
+        javax.swing.JButton usuarios = new javax.swing.JButton("Usuarios");
+        javax.swing.JButton prestamos = new javax.swing.JButton("Préstamos");
+        javax.swing.JButton detalles = new javax.swing.JButton("Detalle de préstamo");
+
+        libros.addActionListener(evento -> abrirLibros());
+        usuarios.addActionListener(evento -> abrirUsuarios());
+        prestamos.addActionListener(evento -> abrirPrestamos());
+        detalles.addActionListener(evento -> abrirDetalles());
+
+        botones.add(libros);
+        botones.add(usuarios);
+        botones.add(prestamos);
+        botones.add(detalles);
+        principal.add(botones, java.awt.BorderLayout.CENTER);
+
+        javax.swing.JLabel indicacion = new javax.swing.JLabel(
+                "Selecciona un módulo para comenzar.", javax.swing.SwingConstants.CENTER);
+        principal.add(indicacion, java.awt.BorderLayout.SOUTH);
+        setContentPane(principal);
+        setSize(600, 350);
     }
 
     private void configurarNavegacion() {
