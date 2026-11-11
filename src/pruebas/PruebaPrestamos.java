@@ -45,5 +45,41 @@ public class PruebaPrestamos {
         }
         if (prestamos.listar().size() != 1) throw new AssertionError("Se guardó un préstamo extra");
         System.out.println("OK: préstamo, detalle y stock guardados en " + carpeta);
+
+        Libro segundoLibro = libros.registrar("Otro libro", "Otra autora", 2);
+        detalles.agregar(prestamo.getId(), segundoLibro.getId(), 2);
+        try {
+            usuarios.eliminar(usuario.getId());
+            throw new AssertionError("Se eliminó un usuario con préstamo activo");
+        } catch (ValidacionException esperado) {
+            System.out.println("OK: no se elimina un usuario con préstamo activo");
+        }
+
+        try {
+            prestamos.registrarDevolucion(prestamo.getId(), LocalDate.now().minusDays(1));
+            throw new AssertionError("Se aceptó una fecha de devolución anterior al préstamo");
+        } catch (IllegalArgumentException esperado) {
+            System.out.println("OK: fecha de devolución inválida rechazada");
+        }
+        if (libros.buscarPorId(libro.getId()).getEjemplaresDisponibles() != 0) {
+            throw new AssertionError("Cambió el stock con una fecha inválida");
+        }
+        prestamos.registrarDevolucion(prestamo.getId(), LocalDate.now());
+        if (prestamos.listar().get(0).estaActivo()
+                || libros.buscarPorId(libro.getId()).getEjemplaresDisponibles() != 1
+                || libros.buscarPorId(segundoLibro.getId()).getEjemplaresDisponibles() != 2
+                || detalles.listarPorPrestamo(prestamo.getId()).size() != 2) {
+            throw new AssertionError("No se devolvió el libro o se perdió el historial");
+        }
+        try {
+            prestamos.registrarDevolucion(prestamo.getId(), LocalDate.now());
+            throw new AssertionError("Se aceptó devolver el préstamo dos veces");
+        } catch (IllegalStateException esperado) {
+            System.out.println("OK: no se devuelve el mismo préstamo dos veces");
+        }
+        System.out.println("OK: devolución completa e historial conservado");
+        usuarios.eliminar(usuario.getId());
+        if (!usuarios.listar().isEmpty()) throw new AssertionError("No se eliminó el usuario");
+        System.out.println("OK: se puede eliminar el usuario después de la devolución");
     }
 }

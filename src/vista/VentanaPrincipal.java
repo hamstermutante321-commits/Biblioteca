@@ -7,6 +7,8 @@ public class VentanaPrincipal extends javax.swing.JFrame {
     private final servicios.SistemaBiblioteca sistema;
     private LibroView vistaLibros;
     private PrestamoView vistaPrestamos;
+    private UsuarioView vistaUsuarios;
+    private DetallePrestamoView vistaDetalles;
     
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(VentanaPrincipal.class.getName());
@@ -33,6 +35,12 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         javax.swing.JMenuItem prestamos = new javax.swing.JMenuItem("Préstamos");
         prestamos.addActionListener(evento -> abrirPrestamos());
         catalogo.add(prestamos);
+        javax.swing.JMenuItem usuarios = new javax.swing.JMenuItem("Usuarios");
+        usuarios.addActionListener(evento -> abrirUsuarios());
+        catalogo.add(usuarios);
+        javax.swing.JMenuItem detalles = new javax.swing.JMenuItem("Detalle de préstamo");
+        detalles.addActionListener(evento -> abrirDetalles());
+        catalogo.add(detalles);
         barra.add(catalogo);
         setJMenuBar(barra);
         pack();
@@ -54,10 +62,28 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         vistaPrestamos.toFront();
     }
 
+    private void abrirUsuarios() {
+        if (vistaUsuarios == null || !vistaUsuarios.isDisplayable()) {
+            vistaUsuarios = new UsuarioView();
+        }
+        vistaUsuarios.setVisible(true);
+        vistaUsuarios.toFront();
+    }
+
+    private void abrirDetalles() {
+        if (vistaDetalles == null || !vistaDetalles.isDisplayable()) {
+            vistaDetalles = new DetallePrestamoView();
+        }
+        vistaDetalles.setVisible(true);
+        vistaDetalles.toFront();
+    }
+
     @Override
     public void dispose() {
         if (vistaLibros != null) vistaLibros.dispose();
         if (vistaPrestamos != null) vistaPrestamos.dispose();
+        if (vistaUsuarios != null) vistaUsuarios.dispose();
+        if (vistaDetalles != null) vistaDetalles.dispose();
         super.dispose();
     }
 

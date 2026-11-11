@@ -97,7 +97,7 @@ public class PrestamoView extends JFrame {
         formulario.add(buscarLibro);
         campoTituloLibro.setEditable(false);
         formulario.add(campoTituloLibro);
-        formulario.add(new JLabel("Consulta: libro aún no vinculado."));
+        formulario.add(new JLabel("Se prestará un ejemplar del libro indicado."));
         formulario.add(new JLabel("El plazo de devolución es de 14 días."));
 
         JButton registrar = new JButton("Registrar préstamo");
@@ -254,7 +254,7 @@ public class PrestamoView extends JFrame {
         } catch (DateTimeParseException error) {
             JOptionPane.showMessageDialog(this, "Escribe una fecha válida con el formato AAAA-MM-DD.",
                     "Fecha inválida", JOptionPane.ERROR_MESSAGE);
-        } catch (IllegalArgumentException | IllegalStateException | IOException error) {
+        } catch (IllegalArgumentException | IllegalStateException | IOException | PersistenciaException | ValidacionException error) {
             JOptionPane.showMessageDialog(this, error.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }

@@ -3,6 +3,7 @@ package servicios;
 import excepciones.PersistenciaException;
 import excepciones.ValidacionException;
 import modelo.Libro;
+import modelo.DetallePrestamo;
 import modelo.Usuario;
 import modelo.Prestamo;
 import java.io.BufferedReader;
@@ -114,36 +115,43 @@ public class ServicioPrestamos {
         return prestamo;
     }
 
-    public void registrarDevolucion(String id, LocalDate fecha) throws IOException {
+    public void registrarDevolucion(String id, LocalDate fecha)
+            throws IOException, PersistenciaException, ValidacionException {
         List<Prestamo> prestamos = listar();
         for (Prestamo prestamo : prestamos) {
             if (prestamo.getId().equals(id)) {
-                verificarSinDetalles(id);
+                // Primero se valida la fecha y que el préstamo siga activo.
                 prestamo.registrarDevolucion(fecha);
-                guardarTodos(prestamos);
+
+                Path carpeta = archivo.toAbsolutePath().getParent();
+                ServicioLibros libros = new ServicioLibros(carpeta.resolve("libros.txt"));
+                ServicioDetallePrestamo servicioDetalles = new ServicioDetallePrestamo(
+                        libros, this, carpeta.resolve("detalles_prestamo.txt"));
+                List<DetallePrestamo> detalles = servicioDetalles.listarPorPrestamo(id);
+                List<DetallePrestamo> devueltos = new ArrayList<>();
+
+                try {
+                    for (DetallePrestamo detalle : detalles) {
+                        libros.devolverEjemplares(detalle.getIdLibro(), detalle.getCantidad());
+                        devueltos.add(detalle);
+                    }
+                    // Los detalles permanecen guardados como historial.
+                    guardarTodos(prestamos);
+                } catch (IOException | PersistenciaException | ValidacionException error) {
+                    // Si falla la devolución, volvemos a descontar lo ya devuelto.
+                    try {
+                        for (DetallePrestamo detalle : devueltos) {
+                            libros.prestarEjemplares(detalle.getIdLibro(), detalle.getCantidad());
+                        }
+                    } catch (PersistenciaException | ValidacionException errorAlRevertir) {
+                        throw new IOException("No se completó la devolución ni se pudo corregir el inventario. Revisa los datos.", errorAlRevertir);
+                    }
+                    throw error;
+                }
                 return;
             }
         }
         throw new IllegalArgumentException("No se encontró el préstamo " + id);
-    }
-
-    // Hasta integrar la devolución completa, evita dejar libros descontados.
-    private void verificarSinDetalles(String id) throws IOException {
-        Path detalles = archivo.toAbsolutePath().resolveSibling("detalles_prestamo.txt");
-        if (!Files.exists(detalles)) return;
-        try (BufferedReader lector = Files.newBufferedReader(detalles, StandardCharsets.UTF_8)) {
-            String linea;
-            while ((linea = lector.readLine()) != null) {
-                if (linea.isBlank()) continue;
-                String[] campos = linea.split("\\|", -1);
-                if (campos.length != 3) {
-                    throw new IOException("No se puede verificar el archivo de detalles: formato inválido.");
-                }
-                if (campos[0].equals(id)) {
-                    throw new IllegalStateException("Primero retira los libros desde Detalle de préstamo para devolver sus ejemplares.");
-                }
-            }
-        }
     }
 
     private void guardarTodos(List<Prestamo> prestamos) throws IOException {

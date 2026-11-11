@@ -161,6 +161,16 @@ public class ServicioUsuarios implements Crud<Usuario> {
             if (id == null || id.isBlank()) {
                 throw new ValidacionException("Indica un ID de usuario.");
             }
+            try {
+                ServicioPrestamos prestamos = new ServicioPrestamos(archivo.resolveSibling("prestamos.txt"));
+                for (modelo.Prestamo prestamo : prestamos.listar()) {
+                    if (prestamo.getIdUsuario().equalsIgnoreCase(id.strip()) && prestamo.estaActivo()) {
+                        throw new ValidacionException("No se puede eliminar un usuario con préstamos activos.");
+                    }
+                }
+            } catch (IOException error) {
+                throw new PersistenciaException("No se pudieron consultar los préstamos del usuario.", error);
+            }
             List<Usuario> usuarios = leer();
             int ultimo = ultimoNumero(usuarios);
             boolean eliminado = usuarios.removeIf(usuario -> usuario.getId().equalsIgnoreCase(id.strip()));
