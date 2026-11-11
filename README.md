@@ -78,9 +78,6 @@ src/
 │   ├── ServicioLibros.java
 │   └── ServicioPrestamos.java
 │
-├── persistencia/
-│   └── ArchivosDatos.java
-│
 ├── excepciones/
 │   ├── ValidacionException.java
 │   └── PersistenciaException.java
