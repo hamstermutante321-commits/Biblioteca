@@ -1,2 +1,2 @@
 L00001|Felipe|XD|3|1
-L00002|Cien años de Soledad|Gabriel Garcia Marquez|25|12
+L00002|Cien años de Soledad|Gabriel Garcia Marquez|25|11
