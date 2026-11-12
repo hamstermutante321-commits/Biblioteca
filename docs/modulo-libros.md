@@ -17,11 +17,11 @@ Esta integración habilita el catálogo. `ServicioUsuarios`, `ServicioPrestamos`
 
 ## Vista del catálogo
 
-La pantalla usa un menú lateral, una tabla con acciones por fila y un formulario a la derecha, con fondo crema, títulos granate y botones terracota. Las miniaturas de portada son decorativas y se dibujan en Swing; el modelo no guarda imágenes. Las opciones Usuarios y Préstamos permanecen deshabilitadas hasta integrar esos módulos. Inicio regresa a la ventana principal.
+La pantalla usa una tabla, botones de acción y un formulario a la derecha. Emplea los mismos componentes Swing básicos que las vistas de préstamos y detalles. La ventana principal permite abrir los demás módulos.
 
-La búsqueda filtra al escribir por título, autor o ID, sin distinguir mayúsculas. **Nuevo libro** abre un formulario vacío y **Guardar libro** registra el libro. El ID se asigna al guardar. Seleccionar una fila o pulsar el lápiz permite editar; el ojo muestra los datos sin permitir cambios y la papelera solicita confirmación antes de eliminar. **Cancelar** limpia el formulario y **Ver todos** elimina el filtro.
+La búsqueda filtra por título, autor o ID, sin distinguir mayúsculas, al pulsar **Buscar** o Enter. **Nuevo libro** limpia el formulario y **Guardar libro** registra el libro. El ID se asigna al guardar. Al seleccionar una fila se cargan sus datos para editar; los botones **Editar**, **Ver detalle** y **Eliminar** actúan sobre esa fila. **Cancelar** limpia el formulario, **Ver todos** elimina el filtro y **Volver** regresa a la ventana principal.
 
-La disponibilidad se muestra en verde si hay más de un ejemplar, amarillo si queda uno y rojo si no queda ninguno. Es un campo de solo lectura que depende de los préstamos y las devoluciones. En ventanas pequeñas, la tabla permite desplazamiento horizontal y el formulario permite desplazamiento vertical.
+La tabla muestra los estados Disponible, Pocos disponibles y No disponible. La disponibilidad del formulario es de solo lectura porque depende de los préstamos y las devoluciones.
 
 ## Datos
 
@@ -82,6 +82,6 @@ java -cp build/classes biblioteca.Biblioteca
 
 Las pruebas cubren CRUD, reapertura, búsquedas, préstamos/devoluciones, ID después de borrar el máximo, UTF-8, datos corruptos, contador inválido y fallos de escritura. La prueba imprime la ruta temporal que utiliza.
 
-`PruebaIntegracionLibros` requiere un escritorio gráfico. Comprueba el arranque de `Biblioteca.main`, la apertura desde el menú, la reutilización de la ventana, registro y modificación desde Swing, actualización de disponibilidad, reapertura y acciones por fila: consulta de solo lectura, edición y eliminación cancelada o confirmada. Sus registros se guardan en otra carpeta temporal.
+`PruebaIntegracionLibros` requiere un escritorio gráfico. Comprueba el arranque de `Biblioteca.main`, la apertura desde el menú, la reutilización de la ventana, registro y modificación desde Swing, actualización de disponibilidad, reapertura y acciones sobre la fila seleccionada: consulta de solo lectura, edición y eliminación cancelada o confirmada. Sus registros se guardan en otra carpeta temporal.
 
-Comprobación manual de la vista: registrar un libro, seleccionarlo, modificarlo, buscar por título, autor e ID, probar cantidades no numéricas, cancelar/confirmar una eliminación, cerrar y reabrir. Los datos de la tabla no se editan directamente; la columna Acciones contiene los botones de cada libro. Usar **Nuevo libro** para iniciar otro registro.
+Comprobación manual de la vista: registrar un libro, seleccionarlo, modificarlo, buscar por título, autor e ID, probar cantidades no numéricas, cancelar/confirmar una eliminación, cerrar y reabrir. Los datos de la tabla no se editan directamente; los botones bajo la tabla actúan sobre el libro seleccionado. Usar **Nuevo libro** para iniciar otro registro.
