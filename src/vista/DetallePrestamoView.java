@@ -119,8 +119,8 @@ public class DetallePrestamoView extends JFrame {
 
         principal.add(new JScrollPane(tabla), BorderLayout.CENTER);
 
-        JButton volver = new JButton("Volver");
-        volver.addActionListener(e -> dispose());
+        JButton volver = new JButton("Volver al menú principal");
+        volver.addActionListener(e -> Navegacion.volverAlMenu(this));
 
         JPanel inferior = new JPanel();
         inferior.setOpaque(false);

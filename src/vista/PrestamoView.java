@@ -35,7 +35,6 @@ import servicios.ServicioLibros;
 import servicios.ServicioPrestamos;
 
 public class PrestamoView extends JFrame {
-    private static final Color TERRACOTA = new Color(183, 76, 64);
     private final ServicioPrestamos servicio = new ServicioPrestamos();
     private final ServicioLibros servicioLibros = new ServicioLibros();
     private final JTextField campoUsuario = new JTextField();
@@ -92,7 +91,6 @@ public class PrestamoView extends JFrame {
             public void changedUpdate(DocumentEvent evento) { campoTituloLibro.setText(""); }
         });
         JButton buscarLibro = new JButton("Buscar libro");
-        aplicarEstiloBoton(buscarLibro);
         buscarLibro.addActionListener(e -> buscarLibro());
         formulario.add(buscarLibro);
         campoTituloLibro.setEditable(false);
@@ -101,7 +99,6 @@ public class PrestamoView extends JFrame {
         formulario.add(new JLabel("El plazo de devolución es de 14 días."));
 
         JButton registrar = new JButton("Registrar préstamo");
-        aplicarEstiloBoton(registrar);
         registrar.addActionListener(e -> registrarPrestamo());
 
         JPanel panelFormulario = new JPanel(new BorderLayout(0, 10));
@@ -122,11 +119,9 @@ public class PrestamoView extends JFrame {
         panelBusqueda.add(campoBusqueda);
         panelBusqueda.add(filtroEstado);
         JButton buscar = new JButton("Buscar");
-        aplicarEstiloBoton(buscar);
         buscar.addActionListener(e -> cargarTabla());
         panelBusqueda.add(buscar);
         JButton verTodos = new JButton("Ver todos");
-        aplicarEstiloBoton(verTodos);
         verTodos.addActionListener(e -> {
             campoBusqueda.setText("");
             filtroEstado.setSelectedItem("Todos");
@@ -142,22 +137,16 @@ public class PrestamoView extends JFrame {
         tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         panelListado.add(new JScrollPane(tabla), BorderLayout.CENTER);
         JButton devolver = new JButton("Registrar devolución");
-        aplicarEstiloBoton(devolver);
         devolver.addActionListener(e -> registrarDevolucion());
         JPanel panelAcciones = new JPanel();
         panelAcciones.setOpaque(false);
         panelAcciones.add(devolver);
+        JButton volver = new JButton("Volver al menú principal");
+        volver.addActionListener(e -> Navegacion.volverAlMenu(this));
+        panelAcciones.add(volver);
         panelListado.add(panelAcciones, BorderLayout.SOUTH);
         contenido.add(panelListado, BorderLayout.CENTER);
         cargarTabla();
-    }
-
-    private void aplicarEstiloBoton(JButton boton) {
-        boton.setBackground(TERRACOTA);
-        boton.setForeground(Color.WHITE);
-        boton.setFocusPainted(false);
-        boton.setFont(new Font("SansSerif", Font.BOLD, 12));
-        boton.setBorder(BorderFactory.createEmptyBorder(9, 14, 9, 14));
     }
 
     private void buscarLibro() {
