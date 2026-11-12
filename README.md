@@ -1,116 +1,63 @@
-<div align="center">
+# Sistema de biblioteca
 
-# 📚 Sistema de Biblioteca
+Proyecto grupal del curso de Programación Orientada a Objetos, desarrollado en 2026 con Java 26, Swing y Apache NetBeans. La aplicación de escritorio administra usuarios, libros, préstamos y detalles de préstamo mediante archivos de texto.
 
-### Gestión de usuarios, libros y préstamos
+## Requisitos y ejecución
 
-<img src="https://img.shields.io/badge/Java-26-1565C0?style=for-the-badge&logo=openjdk&logoColor=white">
-<img src="https://img.shields.io/badge/Swing-Interfaz%20gráfica-00897B?style=for-the-badge">
-<img src="https://img.shields.io/badge/Estado-En%20desarrollo-F9A825?style=for-the-badge">
+- JDK 26 configurado en Apache NetBeans.
+- Abrir el proyecto `Biblioteca` en NetBeans y ejecutarlo con **Run Project**. La clase principal es `biblioteca.Biblioteca`.
+- Si la ejecución muestra clases antiguas o no encuentra una clase, usar **Clean and Build Project** y volver a ejecutar.
+- Los archivos de datos se leen y escriben con rutas relativas a la carpeta de ejecución. Mantener la carpeta `datos` junto al proyecto al ejecutarlo desde NetBeans.
 
+## Módulos
 
+| Módulo | Función |
+| --- | --- |
+| Usuarios | Registrar, buscar, modificar y eliminar usuarios. El DNI no se puede repetir y no se permite eliminar a un usuario con préstamos activos. |
+| Libros | Registrar y consultar libros, modificar sus datos y controlar sus ejemplares disponibles. |
+| Préstamos | Registrar un préstamo para un usuario y un libro existentes; consultar su estado y registrar su devolución. |
+| Detalle del préstamo | Consultar los libros de un préstamo y agregar o quitar libros mientras el préstamo esté activo. |
 
-<br><br>
+La ventana principal ofrece acceso a los cuatro módulos. Cada módulo se abre en una ventana propia.
 
-Aplicación de escritorio para administrar usuarios, libros y préstamos de una biblioteca.
+## Cómo funciona un préstamo
 
-</div>
+1. Registrar un usuario y un libro con ejemplares disponibles.
+2. En **Préstamos**, ingresar los IDs del usuario y del libro. El botón de búsqueda permite consultar el título.
+3. Al registrar, el sistema comprueba los IDs y la disponibilidad; guarda el préstamo, crea automáticamente el detalle del primer libro y descuenta un ejemplar.
+4. Si se necesitan más libros, agregarlos en **Detalle del préstamo**, indicando el ID del préstamo, el ID del libro y la cantidad.
+5. El vencimiento se calcula 14 días después de la fecha del préstamo.
+6. Al devolver, el sistema registra la fecha y repone las cantidades de todos los detalles. Los detalles permanecen como historial.
 
----
+Los datos se guardan en archivos para poder consultarlos nuevamente después de cerrar la aplicación. Si ocurre un error de escritura durante una operación que afecta varios archivos, el sistema intenta revertir los cambios ya realizados.
 
-## Descripción
-
-Este proyecto consiste en una aplicación desarrollada en Java para organizar la información de una biblioteca.
-
-El sistema permite registrar usuarios, controlar los libros disponibles y administrar los préstamos realizados.
-
-También permite consultar la fecha de vencimiento de cada préstamo y conocer qué libros se encuentran disponibles.
-
----
-
-## Funcionalidades
-
-| Módulo | Descripción |
-|---|---|
-| 👤 Usuarios | Registrar, buscar, editar y eliminar usuarios |
-| 📚 Libros | Administrar títulos, autores y ejemplares |
-| 🔄 Préstamos | Registrar libros prestados a cada usuario |
-| 📅 Vencimientos | Consultar fechas límite de devolución |
-| 📦 Disponibilidad | Controlar los ejemplares disponibles |
-| 🔎 Búsqueda | Buscar usuarios, libros y préstamos |
-
----
-
-## Entidades del sistema
-
-```text
-Usuario
-   │
-   └── Préstamo
-          │
-          └── DetallePrestamo
-                         │
-                         └── Libro
-Usuario: representa un libro registrado en el catalogo y contiene su cantidad disponible.
-Préstamo: relaciona a un usuario con uno o varios libros determinados que el usuario eligio.
-DetallePrestamo: representa cada libro incluido en el prestamo.
-```
-Se usará:
-Java 26.
-Java Swing.
-Programación Orientada a Objetos.
-Apache NetBeans.
-Git y GitHub.
-
-## Organización del proyecto
+## Organización del código
 
 ```text
 src/
-├── modelo/
-│   ├── Usuario.java
-│   ├── Libro.java
-│   ├── Prestamo.java
-│   └── DetallePrestamo.java
-│
-├── servicios/
-│   ├── Crud.java
-│   ├── ServicioUsuarios.java
-│   ├── ServicioLibros.java
-│   └── ServicioPrestamos.java
-│
-├── excepciones/
-│   ├── ValidacionException.java
-│   └── PersistenciaException.java
-│
-└── vista/
-    ├── VentanaPrincipal.java
-    └── Estilo.java
+├── biblioteca/    Punto de entrada de la aplicación
+├── modelo/        Libro, Usuario, Prestamo y DetallePrestamo
+├── servicios/     Reglas, operaciones y persistencia de cada módulo
+├── vista/         Ventanas construidas con Swing
+├── excepciones/  Errores de validación y persistencia
+└── pruebas/      Programas de comprobación de libros y préstamos
 ```
 
+Los modelos se relacionan mediante identificadores: un préstamo guarda el ID del usuario y cada detalle guarda los IDs del préstamo y del libro. Los servicios consultan los archivos para localizar los registros relacionados.
 
-## COMO FUNCIONA UN PRESTAMO?
-1. Se selecciona un usuario.
-2. Se selecciona uno o varios libros.
-3. El sistema verifica que existan ejemplares disponibles.
-4. Se registra la fecha del préstamo.
-5. Se calcula la fecha de vencimiento según una fecha que considere razonable.
-6. Se guarda la información en una lista.
-7. Se reduce la cantidad disponible del libro.
+## Archivos de datos
 
-Una vez devuelto el libro la cantidad disponible aumenta.
+Los cuatro archivos principales se encuentran en `datos/`:
 
-## REGLAS
-- Un usuario no puede registrarse dos veces con el mismo documento.
-- No se puede prestar un libro sin ejemplares disponibles.
-- La fecha de vencimiento debe ser posterior a la fecha del préstamo.
-- Los préstamos vencidos deben identificarse claramente.
-- Un libro devuelto vuelve a estar disponible.
-- No se puede eliminar un usuario que tenga préstamos activos.
+- `usuarios.txt`: ID, nombre, DNI y correo.
+- `libros.txt`: ID, título, autor, ejemplares totales y disponibles.
+- `prestamos.txt`: ID, ID de usuario, fecha de préstamo, vencimiento y devolución.
+- `detalles_prestamo.txt`: ID de préstamo, ID de libro y cantidad.
 
-## Persistencia de datos
-Esta primera versión generara los siguientes txt:
-datos/usuarios.txt
-datos/libros.txt
-datos/prestamos.txt
-datos/detalles_prestamo.txt
-Esto es más que nada para conservar los datos aún cuando se cierre la app.
+Cada registro ocupa una línea y los campos se separan con `|`. Los servicios de usuarios y libros también usan `usuarios-secuencia.txt` y `libros-secuencia.txt` para conservar la secuencia de IDs. Los archivos necesarios se crean al guardar si todavía no existen.
+
+## Pruebas
+
+El paquete `pruebas` incluye comprobaciones del catálogo y de la integración de préstamos. Utilizan carpetas temporales para no modificar los datos habituales de la biblioteca. Para una revisión completa, ejecutar también la interfaz y probar el registro, cierre, reapertura y devolución desde las ventanas.
+
+Las vistas son ventanas independientes; si se deja abierta la tabla de libros durante un préstamo o devolución, puede ser necesario actualizarla para consultar la disponibilidad más reciente.
