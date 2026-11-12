@@ -55,14 +55,8 @@ public class PruebaIntegracionLibros {
     }
     private static void accionFila(LibroView vista, String accion) {
         JTable tabla = tabla(vista);
-        tabla.editCellAt(0, tabla.getColumnModel().getColumnIndex("Acciones"));
-        for (Component c : componentes(tabla.getEditorComponent())) {
-            if (c instanceof JButton && accion.equals(((JButton) c).getToolTipText())) {
-                ((JButton) c).doClick();
-                return;
-            }
-        }
-        throw new AssertionError("Falta la acción " + accion);
+        tabla.setRowSelectionInterval(0, 0);
+        pulsar(vista, accion);
     }
     private static void eliminarConRespuesta(LibroView vista, int respuesta) {
         Timer responder = new Timer(100, evento -> {
@@ -91,6 +85,15 @@ public class PruebaIntegracionLibros {
                 campo(vista, "Ejemplares totales").setText("4");
                 pulsar(vista, "Guardar libro");
                 if (tabla(vista).getRowCount() != 1 || tabla(vista).isCellEditable(0, 0)) throw new AssertionError("Tabla incorrecta");
+                JTextField buscar = (JTextField) componentes(vista).stream()
+                        .filter(c -> c instanceof JTextField && ((JTextField) c).getColumns() == 22)
+                        .findFirst().orElseThrow();
+                buscar.setText("sin coincidencias");
+                pulsar(vista, "Buscar");
+                if (tabla(vista).getRowCount() != 0) throw new AssertionError("La búsqueda no filtró");
+                buscar.setText("Autor de prueba");
+                pulsar(vista, "Buscar");
+                if (tabla(vista).getRowCount() != 1) throw new AssertionError("No busca por autor");
                 servicio.prestarEjemplares("L00001", 2);
                 pulsar(vista, "Ver todos");
                 if (!tabla(vista).getValueAt(0, tabla(vista).getColumnModel().getColumnIndex("Disponibles")).equals(2)) throw new AssertionError("Stock desactualizado");
@@ -114,6 +117,8 @@ public class PruebaIntegracionLibros {
                 if (servicio.listar().size() != 1) throw new AssertionError("Se ignoró la cancelación");
                 eliminarConRespuesta(abierta, JOptionPane.YES_OPTION);
                 if (!servicio.listar().isEmpty() || tabla(abierta).getRowCount() != 0) throw new AssertionError("No se eliminó el registro");
+                pulsar(abierta, "Volver");
+                if (abierta.isDisplayable() || !principal.isVisible()) throw new AssertionError("No regresó al inicio");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             } finally {
