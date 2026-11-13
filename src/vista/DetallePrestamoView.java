@@ -90,18 +90,21 @@ public class DetallePrestamoView extends JFrame {
 
         JButton buscar = new JButton("Buscar libro");
         JButton agregar = new JButton("Agregar libro");
+        JButton editar = new JButton("Cambiar cantidad");
         JButton quitar = new JButton("Quitar libro");
         JButton ver = new JButton("Ver detalles");
         JButton limpiar = new JButton("Limpiar");
 
         buscar.addActionListener(e -> buscarLibro());
         agregar.addActionListener(e -> agregar());
+        editar.addActionListener(e -> cambiarCantidad());
         quitar.addActionListener(e -> quitar());
         ver.addActionListener(e -> cargar());
         limpiar.addActionListener(e -> limpiar());
 
         botones.add(buscar);
         botones.add(agregar);
+        botones.add(editar);
         botones.add(quitar);
         botones.add(ver);
         botones.add(limpiar);
@@ -222,6 +225,34 @@ public class DetallePrestamoView extends JFrame {
                     "Libro retirado del préstamo."
             );
 
+        } catch (Exception error) {
+            mostrarError(error);
+        }
+    }
+
+    private void cambiarCantidad() {
+        int fila = tabla.getSelectedRow();
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this, "Selecciona un libro de la tabla.");
+            return;
+        }
+        String idPrestamo = campoPrestamo.getText().strip();
+        if (!idPrestamo.equals(prestamoMostrado)) {
+            JOptionPane.showMessageDialog(this, "Pulsa Ver detalles para el préstamo indicado.");
+            return;
+        }
+        int filaModelo = tabla.convertRowIndexToModel(fila);
+        String idLibro = modelo.getValueAt(filaModelo, 0).toString();
+        String anterior = modelo.getValueAt(filaModelo, 2).toString();
+        String texto = JOptionPane.showInputDialog(this, "Nueva cantidad para " + idLibro + ":", anterior);
+        if (texto == null) return;
+        try {
+            int cantidad = Integer.parseInt(texto.strip());
+            servicio.cambiarCantidad(idPrestamo, idLibro, cantidad);
+            cargar();
+            JOptionPane.showMessageDialog(this, "Cantidad actualizada.");
+        } catch (NumberFormatException error) {
+            mostrarError(new IllegalArgumentException("Escribe una cantidad entera."));
         } catch (Exception error) {
             mostrarError(error);
         }

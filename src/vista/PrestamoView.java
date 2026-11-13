@@ -138,12 +138,24 @@ public class PrestamoView extends JFrame {
         panelListado.add(new JScrollPane(tabla), BorderLayout.CENTER);
         JButton devolver = new JButton("Registrar devolución");
         devolver.addActionListener(e -> registrarDevolucion());
-        JPanel panelAcciones = new JPanel();
+        JButton editar = new JButton("Editar usuario");
+        editar.addActionListener(e -> editarUsuario());
+        JButton eliminar = new JButton("Eliminar préstamo");
+        eliminar.addActionListener(e -> eliminarPrestamo());
+        JPanel panelAcciones = new JPanel(new GridLayout(2, 1));
         panelAcciones.setOpaque(false);
-        panelAcciones.add(devolver);
+        JPanel accionesPrestamo = new JPanel();
+        accionesPrestamo.setOpaque(false);
+        accionesPrestamo.add(editar);
+        accionesPrestamo.add(eliminar);
+        accionesPrestamo.add(devolver);
         JButton volver = new JButton("Volver al menú principal");
         volver.addActionListener(e -> Navegacion.volverAlMenu(this));
-        panelAcciones.add(volver);
+        JPanel navegacion = new JPanel();
+        navegacion.setOpaque(false);
+        navegacion.add(volver);
+        panelAcciones.add(accionesPrestamo);
+        panelAcciones.add(navegacion);
         panelListado.add(panelAcciones, BorderLayout.SOUTH);
         contenido.add(panelListado, BorderLayout.CENTER);
         cargarTabla();
@@ -219,6 +231,46 @@ public class PrestamoView extends JFrame {
             return "Vencido";
         }
         return "Activo";
+    }
+
+    private void editarUsuario() {
+        int fila = tabla.getSelectedRow();
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this, "Selecciona un préstamo de la tabla.");
+            return;
+        }
+        int indice = tabla.convertRowIndexToModel(fila);
+        String id = modeloTabla.getValueAt(indice, 0).toString();
+        String usuarioActual = modeloTabla.getValueAt(indice, 1).toString();
+        String nuevo = JOptionPane.showInputDialog(this, "Nuevo ID del usuario:", usuarioActual);
+        if (nuevo == null) return;
+        try {
+            servicio.cambiarUsuario(id, nuevo.trim());
+            cargarTabla();
+            JOptionPane.showMessageDialog(this, "Usuario del préstamo actualizado.");
+        } catch (IllegalArgumentException | IllegalStateException | IOException | PersistenciaException | ValidacionException error) {
+            JOptionPane.showMessageDialog(this, error.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void eliminarPrestamo() {
+        int fila = tabla.getSelectedRow();
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this, "Selecciona un préstamo de la tabla.");
+            return;
+        }
+        String id = modeloTabla.getValueAt(tabla.convertRowIndexToModel(fila), 0).toString();
+        int respuesta = JOptionPane.showConfirmDialog(this,
+                "¿Eliminar el préstamo " + id + " y sus detalles? Solo se pueden eliminar préstamos devueltos.",
+                "Eliminar préstamo", JOptionPane.YES_NO_OPTION);
+        if (respuesta != JOptionPane.YES_OPTION) return;
+        try {
+            servicio.eliminar(id);
+            cargarTabla();
+            JOptionPane.showMessageDialog(this, "Préstamo y detalles eliminados.");
+        } catch (IllegalArgumentException | IllegalStateException | IOException error) {
+            JOptionPane.showMessageDialog(this, error.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void registrarDevolucion() {

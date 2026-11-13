@@ -55,6 +55,15 @@ public class ServicioPrestamos {
 
     public String generarId() throws IOException {
         int mayor = 0;
+        Path secuencia = archivo.toAbsolutePath().resolveSibling("prestamos-secuencia.txt");
+        if (Files.exists(secuencia)) {
+            try {
+                mayor = Integer.parseInt(Files.readString(secuencia, StandardCharsets.UTF_8).trim());
+                if (mayor < 0) throw new NumberFormatException();
+            } catch (NumberFormatException error) {
+                throw new IOException("La secuencia de préstamos no es válida.", error);
+            }
+        }
         for (Prestamo prestamo : listar()) {
             String id = prestamo.getId();
             try {
@@ -108,11 +117,69 @@ public class ServicioPrestamos {
             throw new IllegalArgumentException("El ID de usuario no puede contener | ni saltos de línea.");
         if (fechaPrestamo == null) throw new IllegalArgumentException("La fecha del préstamo es obligatoria.");
         LocalDate fechaVencimiento = fechaPrestamo.plusDays(DIAS_PRESTAMO);
-        Prestamo prestamo = new Prestamo(generarId(), idUsuario, fechaPrestamo, fechaVencimiento);
+        String id = generarId();
+        Prestamo prestamo = new Prestamo(id, idUsuario, fechaPrestamo, fechaVencimiento);
+        guardarSecuencia(id);
         List<Prestamo> prestamos = listar();
         prestamos.add(prestamo);
         guardarTodos(prestamos);
         return prestamo;
+    }
+
+    private void guardarSecuencia(String id) throws IOException {
+        Path destino = archivo.toAbsolutePath().resolveSibling("prestamos-secuencia.txt");
+        Files.createDirectories(destino.getParent());
+        Path temporal = Files.createTempFile(destino.getParent(), "secuencia-prestamos-", ".tmp");
+        try {
+            Files.writeString(temporal, id.substring(1), StandardCharsets.UTF_8);
+            Files.move(temporal, destino, StandardCopyOption.REPLACE_EXISTING);
+        } finally {
+            Files.deleteIfExists(temporal);
+        }
+    }
+
+    public void cambiarUsuario(String id, String nuevoIdUsuario)
+            throws IOException, PersistenciaException, ValidacionException {
+        List<Prestamo> prestamos = listar();
+        for (int i = 0; i < prestamos.size(); i++) {
+            Prestamo anterior = prestamos.get(i);
+            if (!anterior.getId().equals(id)) continue;
+            if (!anterior.estaActivo()) throw new IllegalStateException("Solo se puede editar un préstamo activo.");
+            Path carpeta = archivo.toAbsolutePath().getParent();
+            Usuario usuario = new ServicioUsuarios(carpeta.resolve("usuarios.txt")).buscarPorId(nuevoIdUsuario);
+            prestamos.set(i, new Prestamo(anterior.getId(), usuario.getId(),
+                    anterior.getFechaPrestamo(), anterior.getFechaVencimiento()));
+            guardarTodos(prestamos);
+            return;
+        }
+        throw new IllegalArgumentException("No se encontró el préstamo " + id + ".");
+    }
+
+    public void eliminar(String id) throws IOException {
+        List<Prestamo> prestamos = listar();
+        Prestamo encontrado = null;
+        for (Prestamo prestamo : prestamos) {
+            if (prestamo.getId().equals(id)) { encontrado = prestamo; break; }
+        }
+        if (encontrado == null) throw new IllegalArgumentException("No se encontró el préstamo " + id + ".");
+        if (encontrado.estaActivo()) throw new IllegalStateException("Primero registra la devolución del préstamo.");
+        // Reservar el siguiente número evita reutilizar IDs de datos anteriores a la secuencia.
+        guardarSecuencia(generarId());
+        Path carpeta = archivo.toAbsolutePath().getParent();
+        ServicioDetallePrestamo detalles = new ServicioDetallePrestamo(
+                new ServicioLibros(carpeta.resolve("libros.txt")), this, carpeta.resolve("detalles_prestamo.txt"));
+        List<DetallePrestamo> anteriores = detalles.retirarDetallesDePrestamo(id);
+        prestamos.remove(encontrado);
+        try {
+            guardarTodos(prestamos);
+        } catch (IOException error) {
+            try { detalles.restaurarDetalles(anteriores); }
+            catch (IOException falloReversion) {
+                error.addSuppressed(falloReversion);
+                throw new IOException("No se eliminó el préstamo ni se pudo restaurar su detalle. Revisa los archivos.", error);
+            }
+            throw error;
+        }
     }
 
     public void registrarDevolucion(String id, LocalDate fecha)

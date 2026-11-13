@@ -15,8 +15,8 @@ Proyecto grupal del curso de Programación Orientada a Objetos, desarrollado en 
 | --- | --- |
 | Usuarios | Registrar, buscar, modificar y eliminar usuarios. El DNI no se puede repetir y no se permite eliminar a un usuario con préstamos activos. |
 | Libros | Registrar y consultar libros, modificar sus datos y controlar sus ejemplares disponibles. |
-| Préstamos | Registrar un préstamo para un usuario y un libro existentes; consultar su estado y registrar su devolución. |
-| Detalle del préstamo | Consultar los libros de un préstamo y agregar o quitar libros mientras el préstamo esté activo. |
+| Préstamos | Registrar y consultar préstamos, corregir el usuario de un préstamo activo, registrar devoluciones y eliminar préstamos devueltos. |
+| Detalle del préstamo | Consultar los libros de un préstamo y agregar, quitar o cambiar cantidades mientras el préstamo esté activo. |
 
 La ventana principal ofrece acceso a los cuatro módulos. Cada módulo se abre en una ventana propia.
 
@@ -28,6 +28,8 @@ La ventana principal ofrece acceso a los cuatro módulos. Cada módulo se abre e
 4. Si se necesitan más libros, agregarlos en **Detalle del préstamo**, indicando el ID del préstamo, el ID del libro y la cantidad.
 5. El vencimiento se calcula 14 días después de la fecha del préstamo.
 6. Al devolver, el sistema registra la fecha y repone las cantidades de todos los detalles. Los detalles permanecen como historial.
+
+Para corregir un préstamo activo, selecciónalo y usa **Editar usuario**. En **Detalle del préstamo**, consulta el préstamo, selecciona un libro y usa **Cambiar cantidad**; el inventario se ajusta por la diferencia. Para eliminar un préstamo, primero registra su devolución: **Eliminar préstamo** también elimina sus detalles y pide confirmación.
 
 Los datos se guardan en archivos para poder consultarlos nuevamente después de cerrar la aplicación. Si ocurre un error de escritura durante una operación que afecta varios archivos, el sistema intenta revertir los cambios ya realizados.
 
@@ -53,7 +55,7 @@ Los cuatro archivos principales se encuentran en `datos/`:
 - `prestamos.txt`: ID, ID de usuario, fecha de préstamo, vencimiento y devolución.
 - `detalles_prestamo.txt`: ID de préstamo, ID de libro y cantidad.
 
-Cada registro ocupa una línea y los campos se separan con `|`. Los servicios de usuarios y libros también usan `usuarios-secuencia.txt` y `libros-secuencia.txt` para conservar la secuencia de IDs. Los archivos necesarios se crean al guardar si todavía no existen.
+Cada registro ocupa una línea y los campos se separan con `|`. Los servicios también usan `usuarios-secuencia.txt`, `libros-secuencia.txt` y `prestamos-secuencia.txt` para conservar las secuencias de IDs. Los archivos necesarios se crean al guardar si todavía no existen.
 
 ## Pruebas
 

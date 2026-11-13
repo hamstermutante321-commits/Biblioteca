@@ -114,6 +114,50 @@ public class ServicioDetallePrestamo {
         }
     }
 
+    public void cambiarCantidad(String idPrestamo, String idLibro, int cantidad)
+            throws IOException, PersistenciaException, ValidacionException {
+        DetallePrestamo nuevo = new DetallePrestamo(idPrestamo, idLibro, cantidad);
+        verificarPrestamoActivo(idPrestamo);
+        List<DetallePrestamo> detalles = leerTodos();
+        for (int i = 0; i < detalles.size(); i++) {
+            DetallePrestamo anterior = detalles.get(i);
+            if (!anterior.getIdPrestamo().equals(nuevo.getIdPrestamo())
+                    || !anterior.getIdLibro().equals(nuevo.getIdLibro())) continue;
+            int diferencia = cantidad - anterior.getCantidad();
+            if (diferencia == 0) return;
+            if (diferencia > 0) libros.prestarEjemplares(idLibro, diferencia);
+            else libros.devolverEjemplares(idLibro, -diferencia);
+            detalles.set(i, nuevo);
+            try {
+                guardarTodos(detalles);
+            } catch (IOException error) {
+                try {
+                    if (diferencia > 0) libros.devolverEjemplares(idLibro, diferencia);
+                    else libros.prestarEjemplares(idLibro, -diferencia);
+                } catch (PersistenciaException | ValidacionException falloReversion) {
+                    error.addSuppressed(falloReversion);
+                    throw new IOException("No se guardó la cantidad ni se pudo corregir el inventario. Revisa los archivos.", error);
+                }
+                throw error;
+            }
+            return;
+        }
+        throw new IllegalArgumentException("No se encontró el detalle.");
+    }
+
+    // El llamador conserva la lista completa para restaurarla si falla el otro archivo.
+    List<DetallePrestamo> retirarDetallesDePrestamo(String id) throws IOException {
+        List<DetallePrestamo> anteriores = leerTodos();
+        List<DetallePrestamo> restantes = new ArrayList<>(anteriores);
+        restantes.removeIf(detalle -> detalle.getIdPrestamo().equals(id));
+        if (restantes.size() != anteriores.size()) guardarTodos(restantes);
+        return anteriores;
+    }
+
+    void restaurarDetalles(List<DetallePrestamo> detalles) throws IOException {
+        guardarTodos(detalles);
+    }
+
     public void quitar(String idPrestamo, String idLibro)
             throws IOException, PersistenciaException, ValidacionException {
 
