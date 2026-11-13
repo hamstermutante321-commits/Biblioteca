@@ -39,8 +39,7 @@ src/
 ├── modelo/        Libro, Usuario, Prestamo y DetallePrestamo
 ├── servicios/     Reglas, operaciones y persistencia de cada módulo
 ├── vista/         Ventanas construidas con Swing
-├── excepciones/  Errores de validación y persistencia
-└── pruebas/      Programas de comprobación de libros y préstamos
+└── excepciones/  Errores de validación y persistencia
 ```
 
 Los modelos se relacionan mediante identificadores: un préstamo guarda el ID del usuario y cada detalle guarda los IDs del préstamo y del libro. Los servicios consultan los archivos para localizar los registros relacionados.
@@ -58,6 +57,6 @@ Cada registro ocupa una línea y los campos se separan con `|`. Los servicios de
 
 ## Pruebas
 
-El paquete `pruebas` incluye comprobaciones del catálogo y de la integración de préstamos. Utilizan carpetas temporales para no modificar los datos habituales de la biblioteca. Para una revisión completa, ejecutar también la interfaz y probar el registro, cierre, reapertura y devolución desde las ventanas.
+Para comprobar la aplicación, ejecutar la interfaz y probar el registro, cierre, reapertura y devolución desde las ventanas. Usar datos de prueba y verificar también los casos de ID inexistente, DNI repetido y falta de ejemplares.
 
 Las vistas son ventanas independientes; si se deja abierta la tabla de libros durante un préstamo o devolución, puede ser necesario actualizarla para consultar la disponibilidad más reciente.
