@@ -6,7 +6,7 @@
 - `src/servicios/ServicioLibros.java`: CRUD, búsqueda, generación de IDs y persistencia del catálogo.
 - `src/vista/LibroView.java`: formulario Swing, tabla y mensajes para el usuario.
 
-Los cuatro modelos son clases independientes, cada uno con un `id` privado e inmutable, validado en su constructor y consultado mediante `getId()`. No hay una clase base de identidad. Se usan `ValidacionException` y `PersistenciaException` existentes. `Crud` no se cambia: su contrato actual no declara las excepciones comprobadas del servicio. `PanelLibros` es el formulario anterior; la pantalla funcional del catálogo es `LibroView`.
+Los modelos son clases independientes con sus propios atributos y validaciones. Se usan `ValidacionException` y `PersistenciaException`. La pantalla funcional del catálogo es `LibroView`.
 
 ## Integración en la carpeta principal
 

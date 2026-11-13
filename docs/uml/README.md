@@ -7,6 +7,6 @@ Para la presentación, comienza por **06-diagrama-general.png** y usa las demás
 1. `01-modelo.png`: clases Usuario, Libro, Préstamo y DetallePrestamo.
 2. `02-servicios.png`: operaciones y persistencia.
 3. `03-vistas.png`: ventanas principales y navegación.
-4. `04-inicio-paneles-excepciones.png`: inicio, paneles y errores.
+4. `04-inicio-excepciones.png`: inicio y errores.
 5. `05-relaciones.png`: relaciones y dependencias.
 6. `06-diagrama-general.png`: vista general.
