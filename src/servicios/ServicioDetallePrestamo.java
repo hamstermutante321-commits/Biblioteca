@@ -63,89 +63,64 @@ public class ServicioDetallePrestamo {
 
     public void agregar(String idPrestamo, String idLibro, int cantidad)
             throws IOException, PersistenciaException, ValidacionException {
-
-        DetallePrestamo nuevo = new DetallePrestamo(
-                idPrestamo,
-                idLibro,
-                cantidad
-        );
-
-        verificarPrestamoActivo(idPrestamo);
-
-        List<DetallePrestamo> detalles = leerTodos();
-
-        for (DetallePrestamo detalle : detalles) {
-            boolean mismoPrestamo = detalle.getIdPrestamo().equals(idPrestamo);
-            boolean mismoLibro = detalle.getIdLibro().equals(idLibro);
-
-            if (mismoPrestamo && mismoLibro) {
-                throw new IllegalArgumentException(
-                        "Ese libro ya está en el préstamo."
-                );
-            }
-        }
-
-        // El servicio de libros comprueba la cantidad disponible.
-        libros.prestarEjemplares(idLibro, cantidad);
-        detalles.add(nuevo);
-
-        try {
-            guardarTodos(detalles);
-
-        } catch (IOException error) {
-            /*
-             * Si no se pudo guardar el detalle, intentamos devolver
-             * al inventario los ejemplares que acabamos de descontar.
-             */
-            try {
-                libros.devolverEjemplares(idLibro, cantidad);
-
-            } catch (PersistenciaException | ValidacionException falloReversion) {
-                error.addSuppressed(falloReversion);
-
-                throw new IOException(
-                        "No se guardó el detalle y no se pudo revertir "
-                        + "el stock. Revisa los archivos.",
-                        error
-                );
-            }
-
-            throw error;
-        }
+        cambiarDetalle(new DetallePrestamo(idPrestamo, idLibro, cantidad), true, false);
     }
 
     public void cambiarCantidad(String idPrestamo, String idLibro, int cantidad)
             throws IOException, PersistenciaException, ValidacionException {
-        DetallePrestamo nuevo = new DetallePrestamo(idPrestamo, idLibro, cantidad);
-        verificarPrestamoActivo(idPrestamo);
-        List<DetallePrestamo> detalles = leerTodos();
-        for (int i = 0; i < detalles.size(); i++) {
-            DetallePrestamo anterior = detalles.get(i);
-            if (!anterior.getIdPrestamo().equals(nuevo.getIdPrestamo())
-                    || !anterior.getIdLibro().equals(nuevo.getIdLibro())) continue;
-            int diferencia = cantidad - anterior.getCantidad();
-            if (diferencia == 0) return;
-            if (diferencia > 0) libros.prestarEjemplares(idLibro, diferencia);
-            else libros.devolverEjemplares(idLibro, -diferencia);
-            detalles.set(i, nuevo);
-            try {
-                guardarTodos(detalles);
-            } catch (IOException error) {
-                try {
-                    if (diferencia > 0) libros.devolverEjemplares(idLibro, diferencia);
-                    else libros.prestarEjemplares(idLibro, -diferencia);
-                } catch (PersistenciaException | ValidacionException falloReversion) {
-                    error.addSuppressed(falloReversion);
-                    throw new IOException("No se guardó la cantidad ni se pudo corregir el inventario. Revisa los archivos.", error);
-                }
-                throw error;
-            }
-            return;
-        }
-        throw new IllegalArgumentException("No se encontró el detalle.");
+        cambiarDetalle(new DetallePrestamo(idPrestamo, idLibro, cantidad), false, false);
     }
 
-    // El llamador conserva la lista completa para restaurarla si falla el otro archivo.
+    public void quitar(String idPrestamo, String idLibro)
+            throws IOException, PersistenciaException, ValidacionException {
+        cambiarDetalle(new DetallePrestamo(idPrestamo, idLibro, 1), false, true);
+    }
+
+    // Las tres operaciones ajustan el inventario y guardan el mismo archivo.
+    private void cambiarDetalle(DetallePrestamo nuevo, boolean agregar, boolean quitar)
+            throws IOException, PersistenciaException, ValidacionException {
+        verificarPrestamoActivo(nuevo.getIdPrestamo());
+        List<DetallePrestamo> detalles = leerTodos();
+        int posicion = -1;
+        for (int i = 0; i < detalles.size(); i++) {
+            DetallePrestamo detalle = detalles.get(i);
+            if (detalle.getIdPrestamo().equals(nuevo.getIdPrestamo())
+                    && detalle.getIdLibro().equals(nuevo.getIdLibro())) {
+                posicion = i;
+                break;
+            }
+        }
+        if (agregar && posicion >= 0) throw new IllegalArgumentException("Ese libro ya está en el préstamo.");
+        if (!agregar && posicion < 0) throw new IllegalArgumentException("No se encontró el detalle.");
+
+        int anterior = agregar ? 0 : detalles.get(posicion).getCantidad();
+        int cantidad = quitar ? 0 : nuevo.getCantidad();
+        int diferencia = cantidad - anterior;
+        if (diferencia == 0) return;
+
+        // Al aumentar se prestan ejemplares; al reducir se devuelven.
+        String idLibro = nuevo.getIdLibro();
+        if (diferencia > 0) libros.prestarEjemplares(idLibro, diferencia);
+        else libros.devolverEjemplares(idLibro, -diferencia);
+        if (agregar) detalles.add(nuevo);
+        else if (quitar) detalles.remove(posicion);
+        else detalles.set(posicion, nuevo);
+
+        try {
+            guardarTodos(detalles);
+        } catch (IOException error) {
+            try {
+                if (diferencia > 0) libros.devolverEjemplares(idLibro, diferencia);
+                else libros.prestarEjemplares(idLibro, -diferencia);
+            } catch (PersistenciaException | ValidacionException falloReversion) {
+                error.addSuppressed(falloReversion);
+                throw new IOException("No se guardó el detalle ni se pudo corregir el inventario. Revisa los archivos.", error);
+            }
+            throw error;
+        }
+    }
+
+    // Permite restaurar los detalles si falla la eliminación del préstamo.
     List<DetallePrestamo> retirarDetallesDePrestamo(String id) throws IOException {
         List<DetallePrestamo> anteriores = leerTodos();
         List<DetallePrestamo> restantes = new ArrayList<>(anteriores);
@@ -156,66 +131,6 @@ public class ServicioDetallePrestamo {
 
     void restaurarDetalles(List<DetallePrestamo> detalles) throws IOException {
         guardarTodos(detalles);
-    }
-
-    public void quitar(String idPrestamo, String idLibro)
-            throws IOException, PersistenciaException, ValidacionException {
-
-        verificarPrestamoActivo(idPrestamo);
-
-        List<DetallePrestamo> detalles = leerTodos();
-        DetallePrestamo encontrado = null;
-
-        for (DetallePrestamo detalle : detalles) {
-            boolean mismoPrestamo = detalle.getIdPrestamo().equals(idPrestamo);
-            boolean mismoLibro = detalle.getIdLibro().equals(idLibro);
-
-            if (mismoPrestamo && mismoLibro) {
-                encontrado = detalle;
-                break;
-            }
-        }
-
-        if (encontrado == null) {
-            throw new IllegalArgumentException(
-                    "No se encontró el detalle."
-            );
-        }
-
-        // Devuelve los ejemplares al inventario.
-        libros.devolverEjemplares(
-                idLibro,
-                encontrado.getCantidad()
-        );
-
-        detalles.remove(encontrado);
-
-        try {
-            guardarTodos(detalles);
-
-        } catch (IOException error) {
-            /*
-             * Si no se pudo quitar el detalle del archivo,
-             * intentamos volver a descontar los ejemplares.
-             */
-            try {
-                libros.prestarEjemplares(
-                        idLibro,
-                        encontrado.getCantidad()
-                );
-
-            } catch (PersistenciaException | ValidacionException falloReversion) {
-                error.addSuppressed(falloReversion);
-
-                throw new IOException(
-                        "No se quitó el detalle y no se pudo revertir "
-                        + "el stock. Revisa los archivos.",
-                        error
-                );
-            }
-
-            throw error;
-        }
     }
 
     private void verificarPrestamoActivo(String id) throws IOException {
