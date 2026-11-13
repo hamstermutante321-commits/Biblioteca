@@ -303,6 +303,12 @@ public class ServicioUsuarios implements Crud<Usuario> {
         validarCampo("nombre", nombre);
         validarCampo("DNI", dni);
         validarCampo("correo", correo);
+        if (!nombre.strip().matches("[\\p{L}]+(?:[ '-][\\p{L}]+)*")) {
+            throw new ValidacionException("El nombre solo puede contener letras, espacios, apóstrofes y guiones.");
+        }
+        if (!dni.strip().matches("[0-9]{8}")) {
+            throw new ValidacionException("El DNI debe tener exactamente 8 dígitos numéricos.");
+        }
         if (!correo.strip().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
             throw new ValidacionException("El correo debe tener un formato válido.");
         }
